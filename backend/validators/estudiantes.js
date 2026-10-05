@@ -32,11 +32,11 @@ function validarFecha(fecha, errores, valores) {
   else valores.fecha_nacimiento = fecha;
 }
 
-// Valida el formato del arreglo cursos: al menos 1, máximo MAX_CURSOS, enteros positivos y sin repetidos.
-// Devuelve la lista de IDs si el formato es correcto, o null si hay errores.
+// Valida el formato del arreglo cursos: puede estar vacío, máximo MAX_CURSOS, enteros positivos y sin
+// repetidos. Devuelve la lista de IDs si el formato es correcto, o null si hay errores.
 function validarListaCursos(cursos, errores) {
-  if (!Array.isArray(cursos) || cursos.length === 0) {
-    errores.push('cursos es obligatorio y debe ser un arreglo con al menos un id de curso.');
+  if (!Array.isArray(cursos)) {
+    errores.push('cursos debe ser un arreglo de IDs de curso.');
     return null;
   }
   if (cursos.length > MAX_CURSOS) {
@@ -93,7 +93,11 @@ async function validarEstudiante(body) {
 
   const carreraId = enteroPositivo(entrada.carrera_id);
   if (!carreraId) errores.push('carrera_id es obligatorio y debe ser un entero positivo.');
-  const cursosIds = validarListaCursos(entrada.cursos, errores);
+
+  // cursos es opcional. Si no se envía, valores.cursos queda en null, que significa
+  // "no tocar las inscripciones"; si se envía (aunque sea []), se valida y reemplaza.
+  const cursosEnviados = entrada.cursos !== undefined && entrada.cursos !== null;
+  const cursosIds = cursosEnviados ? validarListaCursos(entrada.cursos, errores) : null;
 
   // Las consultas a la base solo se hacen si carrera_id tiene formato válido.
   if (carreraId) {
@@ -101,7 +105,7 @@ async function validarEstudiante(body) {
     const [carreras] = await pool.execute('SELECT id FROM carreras WHERE id = ?', [carreraId]);
     if (carreras.length === 0) {
       errores.push('La carrera indicada no existe.');
-    } else if (cursosIds) {
+    } else if (cursosIds && cursosIds.length > 0) {
       await validarCursosDeCarrera(carreraId, cursosIds, errores);
     }
   }

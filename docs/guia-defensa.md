@@ -6,7 +6,7 @@ Documento de estudio basado en el código actual de `database/`, `backend/` y `f
 
 Ejemplo: registrar un estudiante inscrito en dos cursos.
 
-1. **Cliente.** Envía `POST http://localhost:3000/api/estudiantes` con el cuerpo `{ nombres, apellidos, correo, carnet, fecha_nacimiento, carrera_id, cursos: [1, 2] }`. Hoy se hace con `docs/probar-api.ps1` o Postman. El frontend todavía usa el contrato anterior (sección 9).
+1. **Frontend (`frontend/js/estudiantes.js`).** Al pulsar Guardar, `guardarEstudiante` lee el formulario (`leerFormulario`) y lo valida (`validarFormulario`). Luego llama a `enviar('/estudiantes', 'POST', datos)` de `api.js`, que usa `fetch()` para enviar `POST http://localhost:3000/api/estudiantes` con el cuerpo `{ nombres, apellidos, correo, carnet, fecha_nacimiento, carrera_id, cursos: [1, 2] }`. El detalle está en la sección 9.
 2. **`backend/server.js`.** Express recibe la petición y aplica, en orden:
    - `cors({ origin: origenesPermitidos })`: el navegador solo deja leer la respuesta a páginas servidas desde los orígenes de `CORS_ORIGIN` (por defecto `http://localhost:5500` y `http://127.0.0.1:5500`).
    - `express.json({ limit: '20kb' })`: convierte el cuerpo JSON en `req.body`. Si el JSON está mal formado o supera 20 kB, el manejador de errores final responde 400.
@@ -16,7 +16,7 @@ Ejemplo: registrar un estudiante inscrito en dos cursos.
 5. **`backend/validators/estudiantes.js` → `validarEstudiante`.** Revisa:
    - textos obligatorios con `validarTexto` (de `validators/comunes.js`);
    - formato del correo y `fecha_nacimiento` (`validarFecha`);
-   - `carrera_id` con `enteroPositivo` y el formato de `cursos` con `validarListaCursos`;
+   - `carrera_id` con `enteroPositivo` y el formato de `cursos` (opcional) con `validarListaCursos`;
    - con la base: que la carrera exista y, con `validarCursosDeCarrera`, que todos los cursos existan y sean de esa carrera (sección 5).
 
    Devuelve `{ errores, valores }`.
@@ -122,17 +122,27 @@ Constantes:
   INNER JOIN cursos cu ON cu.id = i.curso_id
 ```
 
-Cuerpo de POST y PUT: `nombres`, `apellidos`, `correo`, `carnet`, `carrera_id`, `cursos` (obligatorios) y `fecha_nacimiento` (opcional, `YYYY-MM-DD`). Respuesta: `id, nombres, apellidos, correo, carnet, fecha_nacimiento, carrera_id, carrera_nombre, cursos: [{ id, nombre, codigo, creditos }]`.
+Cuerpo de POST y PUT: `nombres`, `apellidos`, `correo`, `carnet`, `carrera_id` (obligatorios), `fecha_nacimiento` (opcional, `YYYY-MM-DD`) y `cursos` (opcional, arreglo de IDs; puede ser `[]`). Respuesta: `id, nombres, apellidos, correo, carnet, fecha_nacimiento, carrera_id, carrera_nombre, cursos: [{ id, nombre, codigo, creditos }]`.
 
 | Endpoint | Entrada | SQL | Códigos |
 |---|---|---|---|
 | GET /api/estudiantes (`listar`) | Ninguna | 1) `${SELECT_ESTUDIANTES} ORDER BY e.id`<br>2) `${SELECT_CURSOS_INSCRITOS} ORDER BY cu.nombre` | 200; 500 |
 | GET /api/estudiantes/:id (`obtener`) | `req.params.id` | 1) `${SELECT_ESTUDIANTES} WHERE e.id = ?`<br>2) `${SELECT_CURSOS_INSCRITOS} WHERE i.estudiante_id = ? ORDER BY cu.nombre` | 200; 400; 404; 500 |
 | POST /api/estudiantes (`crear`) | `req.body` | Validador: `SELECT id FROM carreras WHERE id = ?` y `SELECT id, carrera_id FROM cursos WHERE id IN (?, ?, ...)`<br>Transacción: `INSERT INTO estudiantes (nombres, apellidos, correo, carnet, carrera_id, fecha_nacimiento) VALUES (?, ?, ?, ?, ?, ?)` y, por cada curso, `INSERT INTO inscripciones (estudiante_id, curso_id) VALUES (?, ?)`<br>Lectura final: las 2 consultas de `obtener` | 201; 400; 409 correo o carnet repetido; 500 |
-| PUT /api/estudiantes/:id (`actualizar`) | `req.params.id` y `req.body` | `SELECT id FROM estudiantes WHERE id = ?`; validador (igual que POST)<br>Transacción: `UPDATE estudiantes SET nombres = ?, apellidos = ?, correo = ?, carnet = ?, carrera_id = ?, fecha_nacimiento = ? WHERE id = ?`, `DELETE FROM inscripciones WHERE estudiante_id = ?` y un `INSERT INTO inscripciones` por curso<br>Lectura final: las 2 consultas de `obtener` | 200; 400; 404; 409; 500 |
+| PUT /api/estudiantes/:id (`actualizar`) | `req.params.id` y `req.body` | `SELECT id FROM estudiantes WHERE id = ?`; validador (igual que POST)<br>Transacción: `SELECT carrera_id FROM estudiantes WHERE id = ? FOR UPDATE`; si cambia la carrera y no se envió `cursos`, `SELECT COUNT(*) AS total FROM inscripciones WHERE estudiante_id = ?`; `UPDATE estudiantes SET nombres = ?, apellidos = ?, correo = ?, carnet = ?, carrera_id = ?, fecha_nacimiento = ? WHERE id = ?`; solo si se envió `cursos`: `DELETE FROM inscripciones WHERE estudiante_id = ?` y un `INSERT INTO inscripciones` por curso<br>Lectura final: las 2 consultas de `obtener` | 200; 400; 404; 409 correo o carnet repetido, o cambio de carrera con inscripciones sin enviar `cursos`; 500 |
 | DELETE /api/estudiantes/:id (`eliminar`) | `req.params.id` | `DELETE FROM estudiantes WHERE id = ?` (si `affectedRows` es 0 responde 404; las inscripciones se borran por `ON DELETE CASCADE`) | 200 `{ mensaje }`; 400; 404; 500 |
 
-Orden en PUT: valida el id (400), comprueba que exista (404), valida el cuerpo (400) y luego abre la transacción. Si la carrera cambia, los cursos se validan contra la carrera **nueva**, porque el validador usa el `carrera_id` del cuerpo.
+Orden en PUT: valida el id (400), comprueba que exista (404), valida el cuerpo (400) y luego abre la transacción. Si la carrera cambia, los cursos enviados se validan contra la carrera **nueva**, porque el validador usa el `carrera_id` del cuerpo. Si el cuerpo no trae `cursos`, las inscripciones no se tocan; la regla completa de cambio de carrera está en la sección 10.
+
+### Inscripciones de un estudiante (`controllers/inscripcionesController.js`)
+
+Rutas declaradas en `routes/estudiantes.js`. Trabajan solo sobre la tabla `inscripciones`; no reciben ni modifican los datos personales.
+
+| Endpoint | Entrada | SQL | Códigos |
+|---|---|---|---|
+| GET /api/estudiantes/:id/cursos (`listar`) | `req.params.id` | 1) `SELECT id FROM estudiantes WHERE id = ?`<br>2) `SELECT cu.id, cu.nombre, cu.codigo, cu.creditos FROM inscripciones i INNER JOIN cursos cu ON cu.id = i.curso_id WHERE i.estudiante_id = ? ORDER BY cu.nombre` | 200 (arreglo); 400; 404; 500 |
+| POST /api/estudiantes/:id/cursos (`inscribir`) | `req.params.id`; `req.body.cursoId` (o `curso_id`) | Transacción: 1) `SELECT carrera_id FROM estudiantes WHERE id = ? FOR UPDATE`<br>2) `SELECT id, carrera_id, nombre, codigo, creditos FROM cursos WHERE id = ?`<br>3) `INSERT INTO inscripciones (estudiante_id, curso_id) VALUES (?, ?)` | 201 `{ id, nombre, codigo, creditos }`; 400 `cursoId` inválido o curso de otra carrera; 404 estudiante o curso inexistente; 409 ya inscrito; 500 |
+| DELETE /api/estudiantes/:id/cursos/:cursoId (`quitar`) | `req.params.id` y `req.params.cursoId` | 1) `SELECT id FROM estudiantes WHERE id = ?`<br>2) `DELETE FROM inscripciones WHERE estudiante_id = ? AND curso_id = ?` (si `affectedRows` es 0 responde 404) | 204 sin cuerpo; 400; 404 estudiante inexistente o no inscrito; 500 |
 
 **Sin consultas N+1 en `listar`.** No se consulta una vez por estudiante (eso serían 1 + N consultas). Se hacen 2 consultas en total, y la función `agruparCursos` arma un `Map` de `estudiante_id → [cursos]` y lo agrega a cada estudiante. No se usa `JSON_ARRAYAGG` para mantener la compatibilidad con MariaDB.
 
@@ -174,7 +184,7 @@ try {
 
 En `validators/estudiantes.js`:
 
-1. `validarListaCursos` revisa el formato: que sea un arreglo con 1 a 20 elementos, todos enteros positivos (`enteroPositivo` rechaza `true`, `[5]`, `5.5`) y sin repetidos.
+1. Si se envía `cursos`, `validarListaCursos` revisa el formato: que sea un arreglo con 0 a 20 elementos, todos enteros positivos (`enteroPositivo` rechaza `true`, `[5]`, `5.5`) y sin repetidos.
 2. Se comprueba que la carrera exista: `SELECT id FROM carreras WHERE id = ?`.
 3. `validarCursosDeCarrera` hace **una sola consulta** para todos los cursos:
 
@@ -253,10 +263,11 @@ Si está apagado al arrancar, el backend termina con `process.exit(1)`. Si se ap
 
 **¿Qué código HTTP devuelve la API?**
 - 200: consulta, actualización o eliminación correcta.
+- 204: inscripción quitada (éxito sin cuerpo).
 - 201: registro creado.
 - 400: datos, id, filtro o JSON inválidos, o cursos de otra carrera.
 - 404: registro o ruta inexistente.
-- 409: duplicado (correo, carnet, nombre o código), o borrado bloqueado porque hay datos que dependen del registro.
+- 409: duplicado (correo, carnet, nombre o código; o inscripción repetida), borrado bloqueado porque hay datos que dependen del registro, o cambio de carrera con inscripciones sin enviar `cursos`.
 - 500: error interno o base de datos no disponible.
 
 **¿Cómo se conecta el backend con MySQL?**
@@ -273,63 +284,176 @@ La sentencia que falla lanza una excepción. El `catch` interno ejecuta `conexio
 
 ## 9. Frontend
 
-> **Atención:** el frontend todavía usa el contrato anterior (un solo `curso_id` por estudiante y los campos `curso_nombre` y `curso_codigo`). Lo que sigue describe el código actual de `frontend/` y debe actualizarse cuando se adapte a carreras y varios cursos.
+Se sirve con `npx serve frontend -l 5500`. El puerto 5500 es obligatorio por CORS, y además los módulos ES no cargan desde `file://`. `index.html` carga un solo script: `<script type="module" src="js/main.js">`. Los demás módulos se cargan con `import`.
 
-Archivos: `frontend/index.html` (estructura y formulario), `frontend/styles.css` (diseño) y `frontend/app.js` (lógica). Se sirve con `npx serve frontend -l 5500` porque CORS solo admite los orígenes del puerto 5500.
+### Módulos
 
-### Piezas comunes de `app.js`
+| Archivo | Responsabilidad | Funciones principales |
+|---|---|---|
+| `js/api.js` | Hablar con la API | `API_URL`, `ErrorApi`, `solicitar(ruta, opciones)`, `enviar(ruta, metodo, datos)`, `borrar(ruta)` |
+| `js/ui.js` | Utilidades de interfaz | `mostrarMensaje`, `mostrarErrorApi`, `mostrarEstadoTabla`, `crearCelda`, `crearBoton`, `crearCeldaAcciones`, `crearOpcion`, `llenarSelectCarreras`, `mostrarErrorCampo`, `pintarErrores`, `detallesACampos`, `cambiarEstadoBoton`, `fechaHoy`, `confirmar` |
+| `js/estudiantes.js` | Vista Estudiantes | `cargarEstudiantes`, `crearFilaEstudiante`, `cargarCursosDeCarrera`, `alCambiarCarrera`, `actualizarCarreras`, `leerFormulario`, `validarFormulario`, `iniciarEdicion`, `confirmarCambioDeCarrera`, `guardarEstudiante`, `eliminarEstudiante`, `reiniciarFormulario`, `actualizarCursosDeFila`, `iniciarEstudiantes` |
+| `js/carreras.js` | Vista Carreras y cursos | `cargarCarreras`, `crearCarrera`, `eliminarCarrera`, `cargarCursos`, `crearCurso`, `eliminarCurso`, `iniciarCarreras` |
+| `js/inscripciones.js` | Panel de detalle e inscripciones | `abrirPanel`, `cerrarPanel`, `refrescarPanel`, `cerrarPanelSi`, `refrescarCursos`, `pintarDatos`, `pintarInscritos`, `llenarDisponibles`, `inscribirCurso`, `quitarCurso`, `iniciarInscripciones` |
+| `js/main.js` | Punto de entrada y conexión entre módulos | `mostrarVista`, `alCambiarHash`, `iniciar` |
 
-| Función | Qué hace |
-|---|---|
-| `API_URL` | Constante única con la dirección base: `http://localhost:3000/api`. |
-| `solicitar(ruta, opciones)` | Llama a `fetch()`. Si no hay respuesta lanza `ErrorApi` con status 0 y el mensaje de API apagada. Si la respuesta no es 2xx lanza `ErrorApi` con el status, `error` y `detalles` del JSON. Si todo va bien devuelve el JSON. |
-| `ErrorApi` | Clase de error con `status`, `message` y `detalles`. |
-| `mostrarMensaje(tipo, texto, detalles)` | Muestra un aviso de éxito o error en la región `aria-live` `#mensajes`. |
-| `mostrarErrorApi(error)` | Muestra el mensaje de la API, el código HTTP y la lista de `detalles`. |
-| `crearCelda`, `crearBoton`, `crearOpcion` | Construyen el DOM con `createElement` y `textContent`; nunca se usa `innerHTML` con datos de la API, lo que evita inyectar HTML o scripts. |
+Reglas comunes:
+- **Seguridad:** todo dato de la API se inserta con `createElement` y `textContent`; nunca se usa `innerHTML`, lo que evita inyectar HTML o scripts.
+- **Errores:** `solicitar` convierte cualquier respuesta no 2xx en `ErrorApi` con `status`, `message` (el `error` de la API) y `detalles`. Si `fetch` no obtiene respuesta, lanza `ErrorApi` con `status` 0 y el mensaje de API apagada.
+- **Errores junto a los campos:** cada módulo tiene un mapa "campo de la API → id del elemento" (`CAMPOS`, `CAMPOS_CARRERA`, `CAMPOS_CURSO`). `pintarErrores` usa ese mapa, y `detallesACampos` ubica los `detalles` de un 400 junto a su campo.
 
-### Flujo de cada acción
+### Navegación sin recargar (`main.js`)
 
-**Cargar la página.** `iniciar()` fija la fecha máxima del campo de nacimiento, registra los eventos y llama a:
-- `cargarCursos()` → `solicitar('/cursos')` → **GET /api/cursos** → llena el select con `crearOpcion(curso.id, "nombre (código)")`.
-- `cargarEstudiantes()` → muestra "Cargando estudiantes…" → `solicitar('/estudiantes')` → **GET /api/estudiantes** → dibuja una fila por estudiante con `crearFilaEstudiante`, o "No hay estudiantes registrados." si la lista está vacía.
+Los enlaces del menú apuntan a `#estudiantes` y `#carreras-cursos`. Al cambiar el hash, el evento `hashchange` llama a `alCambiarHash` → `mostrarVista(nombre, true)`, que:
+- pone `hidden` en la vista que no corresponde;
+- marca el enlace activo con `aria-current="page"`;
+- mueve el foco al título de la vista para que el lector de pantalla la anuncie.
 
-**Crear.** Botón Guardar → evento `submit` → `guardarEstudiante(evento)`:
-1. `evento.preventDefault()` evita que el navegador recargue la página.
-2. `leerFormulario()` arma el objeto con los textos sin espacios sobrantes, `curso_id` numérico y `fecha_nacimiento` o `null`.
-3. `validarFormulario(datos)` aplica campos obligatorios, el formato del correo (la misma expresión que el backend) y que la fecha no sea futura. Si hay errores, `mostrarErroresFormulario` los muestra junto a cada campo y no se envía nada.
-4. `cambiarEstadoEnvio(true)` deshabilita los botones y muestra "Guardando…".
-5. `solicitar('/estudiantes', { method: 'POST', body: JSON.stringify(datos) })` → **POST /api/estudiantes** → 201.
-6. Si funciona: `reiniciarFormulario()`, un mensaje de éxito y `cargarEstudiantes()`. Si falla con 400, `detallesACampos` ubica cada detalle junto a su campo; en todos los casos `mostrarErrorApi` muestra el mensaje de la API.
+Un hash desconocido, como `#contenido` del enlace "Saltar al contenido", no cambia la vista.
 
-**Editar.** Botón Editar de la fila → `iniciarEdicion(id)` → `solicitar('/estudiantes/' + id)` → **GET /api/estudiantes/:id** → `llenarFormulario(estudiante)`, `idEnEdicion = id` y el título cambia a "Editar estudiante #id". Al guardar, `guardarEstudiante` detecta `idEnEdicion` y envía **PUT /api/estudiantes/:id** → 200. Cancelar llama a `reiniciarFormulario()` y vuelve al modo crear. Si el estudiante ya no existe (404), se muestra el error y se recarga la tabla.
+`iniciar()` muestra la vista inicial, conecta los módulos y carga los datos (`cargarCarreras()` y `cargarCursos()`). Los módulos no se importan entre sí: `main.js` les pasa funciones ("avisos").
+- `iniciarCarreras(...)`: cada vez que `carreras.js` recarga las carreras, se llama a `actualizarCarreras` (select y casillas de Estudiantes) y a `refrescarPanel` (select "Agregar curso").
+- `iniciarEstudiantes({ alVerCursos, alGuardar, alEliminar })`: el botón "Ver / Cursos" abre el panel; guardar o eliminar un estudiante refresca o cierra el panel.
+- `iniciarInscripciones({ alEditar, alCambiarCursos, alNoExistir })`: "Editar datos" usa el formulario de `estudiantes.js`, e inscribir o quitar un curso actualiza solo la fila con `actualizarCursosDeFila`.
 
-**Eliminar.** Botón Eliminar → `eliminarEstudiante(estudiante, boton)` → `window.confirm(...)`; si el usuario cancela, no se hace nada. Si confirma, se deshabilita el botón y se ejecuta `solicitar('/estudiantes/' + id, { method: 'DELETE' })` → **DELETE /api/estudiantes/:id** → 200 `{ mensaje }`. Se muestra el `mensaje` y se recarga la tabla.
+### Flujo principal: elegir carrera, cargar cursos y registrar al estudiante (cursos opcionales)
 
-**Recargar.** El botón Recargar llama a `cargarEstudiantes()`.
+1. **Al iniciar:** `cargarCarreras()` → **GET /api/carreras**. Llena los selects de la vista Carreras y llama a `actualizarCarreras(carreras)`, que llena el select `#est-carrera` con `llenarSelectCarreras`. El grupo de cursos (`<fieldset id="est-cursos" disabled>`) empieza deshabilitado, con el texto "Seleccione primero una carrera".
+2. **El usuario elige la carrera:** el evento `change` llama a `alCambiarCarrera()`:
+   - si había cursos marcados, muestra el aviso "Cambió la carrera: se limpió la selección de cursos";
+   - llama a `cargarCursosDeCarrera(carreraId)`.
+3. **`cargarCursosDeCarrera`** → **GET /api/cursos?carrera_id=N**:
+   - crea una casilla con su `<label>` por curso (`crearCasilla`) y habilita el fieldset;
+   - si la carrera no tiene cursos, muestra un mensaje con enlace a `#carreras-cursos`;
+   - un contador (`ultimaCargaCursos`) descarta respuestas lentas de una carrera elegida antes.
+4. **El usuario marca cero o más cursos y pulsa Guardar:** `guardarEstudiante(evento)`:
+   - `evento.preventDefault()` evita recargar la página;
+   - `leerFormulario()` arma `{ nombres, apellidos, correo, carnet, fecha_nacimiento, carrera_id, cursos }`, donde `cursos` son los IDs de las casillas marcadas (`cursosMarcados()`). En modo edición no incluye `cursos`;
+   - `validarFormulario(datos)` revisa los campos obligatorios, el correo, que la fecha no sea futura y la carrera elegida (los cursos son opcionales). Si hay errores, `pintarErrores` los muestra junto a cada campo (el del grupo, debajo del fieldset) y enfoca el primero;
+   - `cambiarEstadoBoton(botonGuardar, true)` deshabilita el botón y muestra "Guardando…";
+   - `enviar('/estudiantes', 'POST', datos)` → **POST /api/estudiantes** → 201. En modo edición: **PUT /api/estudiantes/:id** → 200.
+5. **Resultado:**
+   - Éxito: `reiniciarFormulario()`, el mensaje "registrado con N curso(s)" y `cargarEstudiantes()` → **GET /api/estudiantes**. La tabla muestra los cursos de cada estudiante como una lista, uno por línea.
+   - Error 400: `detallesACampos` ubica cada detalle; por ejemplo, "Los cursos con id 5 no pertenecen…" queda junto al grupo de cursos.
+   - En todos los errores, `mostrarErrorApi` muestra el mensaje de la API con su código.
+
+### Otras acciones
+
+- **Editar datos:** botón Editar de la fila, o "Editar datos" del panel → `iniciarEdicion(id)` → **GET /api/estudiantes/:id** → llena los datos personales y la carrera, y **oculta** la sección de cursos (las inscripciones se gestionan en el panel). El título cambia a "Editar datos: …" y el botón a "Guardar cambios". Al guardar se envía **PUT** sin `cursos`. Si cambió la carrera, aplica la regla de la sección 10. Cancelar llama a `reiniciarFormulario()`.
+- **Ver / Cursos:** abre el panel de detalle (sección 10).
+- **Eliminar estudiante:** `eliminarEstudiante` → `confirmar(...)` → **DELETE /api/estudiantes/:id**.
+- **Crear carrera:** `crearCarrera` → **POST /api/carreras** → `cargarCarreras()`, que actualiza la tabla, los selects de ambas vistas y las casillas.
+- **Crear curso:** `crearCurso` → **POST /api/cursos**. Conserva la carrera elegida para cargar varios cursos seguidos y recarga carreras (para `total_cursos` y las casillas de Estudiantes) y cursos.
+- **Filtrar cursos:** `change` del select `#filtro-carrera` → `cargarCursos()` → **GET /api/cursos?carrera_id=N**, o **GET /api/cursos** si se elige "Todas".
+- **Eliminar carrera o curso:** `eliminarCarrera` y `eliminarCurso` piden `confirmar(...)` → **DELETE /api/carreras/:id** o **DELETE /api/cursos/:id**. Si la API responde 409 porque hay dependientes, se muestra su mensaje, por ejemplo "No se puede eliminar la carrera porque tiene 2 curso(s) y 1 estudiante(s) asociados…". Si se borra, se recargan carreras y cursos, y con ellas el select y las casillas de Estudiantes.
 
 ### Manejo de errores en pantalla
 
 | Situación | Qué ve el usuario |
 |---|---|
-| API apagada o red caída (`fetch` lanza excepción) | "No se pudo conectar con la API. Verifique que el backend esté en ejecución en http://localhost:3000." |
+| API apagada o red caída (`fetch` lanza excepción) | "No se pudo conectar con la API. Verifique que el backend esté en ejecución en http://localhost:3000." y la tabla con "No se pudo cargar…" |
 | 400 | "Hay datos inválidos. (HTTP 400)" con la lista de `detalles`, cada uno también junto a su campo |
-| 404 | "Estudiante no encontrado. (HTTP 404)" |
-| 409 | "El correo o carnet ya está registrado. (HTTP 409)" |
+| 404 | Por ejemplo "Estudiante no encontrado. (HTTP 404)"; la tabla se recarga |
+| 409 | Mensaje de la API: duplicado, o borrado bloqueado por dependientes |
 | 500 | "Error interno del servidor. (HTTP 500)" |
+
+Los mensajes de éxito y aviso se cierran solos a los 6 segundos; los de error quedan hasta cerrarlos. Todos se escriben en la región `aria-live` `#mensajes`.
 
 ### Respuestas base
 
 **¿Qué hace `fetch()`?**
-Es la función nativa del navegador para hacer peticiones HTTP desde JavaScript sin recargar la página. En este proyecto solo se llama dentro de `solicitar`: `fetch(API_URL + ruta, { method, headers, body })`. Devuelve una promesa que se resuelve con un objeto `Response` aunque el código sea 400 o 500; por eso `solicitar` revisa `respuesta.ok`. La promesa solo se rechaza cuando no hay respuesta (API apagada, red caída o CORS bloqueado), y ese caso se informa como API no disponible. El cuerpo se lee con `await respuesta.json()`. En POST y PUT se envía `Content-Type: application/json` y `body: JSON.stringify(datos)`.
+Es la función nativa del navegador para hacer peticiones HTTP desde JavaScript sin recargar la página. En este proyecto solo se llama dentro de `solicitar` (`js/api.js`): `fetch(API_URL + ruta, { method, headers, body })`. Devuelve una promesa que se resuelve con un objeto `Response` aunque el código sea 400 o 500; por eso `solicitar` revisa `respuesta.ok`. La promesa solo se rechaza cuando no hay respuesta (API apagada, red caída o CORS bloqueado), y ese caso se informa como API no disponible. El cuerpo se lee con `await respuesta.json()`. En POST y PUT, `enviar` agrega `Content-Type: application/json` y `body: JSON.stringify(datos)`.
 
 **¿Qué endpoint se consume?**
 
 | Acción en pantalla | Función | Endpoint |
 |---|---|---|
-| Abrir la página / Recargar | `cargarEstudiantes` | GET /api/estudiantes |
-| Abrir la página (select de cursos) | `cargarCursos` | GET /api/cursos |
+| Abrir la página / Recargar estudiantes | `cargarEstudiantes` | GET /api/estudiantes |
+| Abrir la página / tras crear o borrar carreras y cursos | `cargarCarreras` | GET /api/carreras |
+| Elegir carrera en el formulario de estudiante | `cargarCursosDeCarrera` | GET /api/cursos?carrera_id=N |
+| Tabla de cursos y su filtro | `cargarCursos` | GET /api/cursos o GET /api/cursos?carrera_id=N |
 | Editar (cargar datos) | `iniciarEdicion` | GET /api/estudiantes/:id |
-| Guardar en modo crear | `guardarEstudiante` | POST /api/estudiantes |
-| Guardar en modo edición | `guardarEstudiante` | PUT /api/estudiantes/:id |
-| Eliminar | `eliminarEstudiante` | DELETE /api/estudiantes/:id |
+| Guardar estudiante (crear / editar) | `guardarEstudiante` | POST /api/estudiantes · PUT /api/estudiantes/:id |
+| Eliminar estudiante | `eliminarEstudiante` | DELETE /api/estudiantes/:id |
+| Crear carrera / Eliminar carrera | `crearCarrera` / `eliminarCarrera` | POST /api/carreras · DELETE /api/carreras/:id |
+| Crear curso / Eliminar curso | `crearCurso` / `eliminarCurso` | POST /api/cursos · DELETE /api/cursos/:id |
+
+## 10. Inscripción de cursos de un estudiante existente
+
+El **registro** del estudiante (datos personales y carrera) y su **inscripción** en cursos son operaciones separadas. Así se puede agregar o quitar un curso sin volver a llenar ni reenviar los datos personales.
+
+### Backend: tres endpoints sobre la tabla `inscripciones`
+
+- `GET /api/estudiantes/:id/cursos`: lista los cursos inscritos.
+- `POST /api/estudiantes/:id/cursos` con `{ "cursoId": n }`: inscribe un curso. Por coherencia con el resto de la API, también acepta `curso_id`.
+- `DELETE /api/estudiantes/:id/cursos/:cursoId`: quita una inscripción y responde **204** (éxito sin cuerpo).
+
+El SQL exacto está en la tabla de la sección 3. Orden de validación en `inscribir`:
+
+| Paso | Comprobación | Código si falla |
+|---|---|---|
+| 1 | `:id` y `cursoId` son enteros positivos | 400 |
+| 2 | El estudiante existe (`SELECT carrera_id FROM estudiantes WHERE id = ? FOR UPDATE`) | 404 `Estudiante no encontrado.` |
+| 3 | El curso existe (`SELECT id, carrera_id, … FROM cursos WHERE id = ?`) | 404 `Curso no encontrado.` |
+| 4 | `curso.carrera_id` es igual a la carrera del estudiante | 400 `El curso no pertenece a la carrera del estudiante.` |
+| 5 | `INSERT INTO inscripciones (estudiante_id, curso_id) VALUES (?, ?)` | 409 `El estudiante ya está inscrito en ese curso.` |
+
+El 409 no se calcula con un `SELECT` previo: lo produce MySQL, porque la clave primaria compuesta `(estudiante_id, curso_id)` rechaza el duplicado (`ER_DUP_ENTRY`). Así no hay carrera entre "comprobar" e "insertar".
+
+**¿Por qué `FOR UPDATE`?** Bloquea la fila del estudiante hasta el `commit`. Si al mismo tiempo alguien edita su carrera (el PUT también hace `SELECT … FOR UPDATE`), una operación espera a la otra. Así nunca queda inscrito en un curso de una carrera que ya no es la suya.
+
+### Regla de cambio de carrera (decisión del proyecto)
+
+Un estudiante solo puede tener cursos de su carrera. Al cambiar la carrera con `PUT /api/estudiantes/:id`:
+
+| Cuerpo del PUT | Resultado |
+|---|---|
+| Sin `cursos` y **misma** carrera | Actualiza los datos; las inscripciones no se tocan |
+| Sin `cursos`, carrera **distinta**, estudiante **sin** inscripciones | Actualiza normalmente |
+| Sin `cursos`, carrera **distinta**, estudiante **con** inscripciones | **409**, no cambia nada: la API nunca borra inscripciones que no se le pidió borrar |
+| Con `cursos` (de la nueva carrera, o `[]`) | En una sola transacción: actualiza la carrera, borra las inscripciones anteriores e inserta las enviadas |
+
+El frontend combina las dos opciones del enunciado:
+- la API **bloquea con 409** el cambio implícito;
+- la interfaz **pide confirmación** y, si el usuario acepta, envía `cursos: []` para quitar las inscripciones de forma explícita y atómica.
+
+### Frontend: panel de detalle (`js/inscripciones.js`)
+
+1. **Ver / Cursos** (botón de la fila, en `estudiantes.js`) → `main.js` llama a `abrirPanel(id)`:
+   - **GET /api/estudiantes/:id** → `pintarDatos` muestra carnet, correo, fecha y carrera en una lista `<dl>`;
+   - el foco pasa al título del panel con el nombre del estudiante.
+2. `refrescarCursos()` pide en paralelo (`Promise.all`):
+   - **GET /api/estudiantes/:id/cursos**: los cursos inscritos;
+   - **GET /api/cursos?carrera_id=N**: los cursos de su carrera.
+
+   Luego:
+   - `pintarInscritos` dibuja cada curso inscrito con su botón **Quitar**;
+   - `llenarDisponibles` llena el select **Agregar curso** solo con los cursos de la carrera que no están inscritos (si no queda ninguno, deshabilita el select y el botón);
+   - avisa a `estudiantes.js` (`actualizarCursosDeFila`) para reemplazar **solo la celda de cursos** de esa fila, sin recargar la tabla.
+3. **Inscribir** → `inscribirCurso(evento)`:
+   - valida que haya un curso elegido;
+   - envía **POST /api/estudiantes/:id/cursos** con `{ cursoId }`;
+   - muestra el éxito o el error de la API (400, 404 o 409);
+   - en ambos casos llama a `refrescarCursos()` para mostrar el estado real de la base.
+4. **Quitar** → `quitarCurso(curso, boton)`: pide `confirmar(...)`, envía **DELETE /api/estudiantes/:id/cursos/:cursoId** (204) y llama a `refrescarCursos()`.
+5. **Editar datos** → `iniciarEdicion(id)` de `estudiantes.js`. El formulario se muestra **sin** la sección de cursos y el PUT se envía sin `cursos`.
+   - Si cambió la carrera, `confirmarCambioDeCarrera` consulta **GET /api/estudiantes/:id/cursos**.
+   - Si hay inscripciones, pide confirmación con los nombres de los cursos. Si se acepta, agrega `cursos: []` al PUT; si se cancela, no se envía nada.
+6. **Sincronización con el resto de la página:**
+   - al guardar los datos, `refrescarPanel(id)` vuelve a cargar el panel;
+   - al eliminar al estudiante, `cerrarPanelSi(id)` lo cierra;
+   - al crear o borrar cursos en "Carreras y cursos", `refrescarPanel()` actualiza el select "Agregar curso".
+
+### Respuestas base
+
+**¿Por qué separar el registro de la inscripción?**
+Son acciones distintas que cambian tablas distintas: los datos personales viven en `estudiantes`, y las inscripciones en `inscripciones`. Con endpoints propios, agregar un curso es un `INSERT` de una fila y quitarlo un `DELETE` de una fila. No hay que reenviar ni revalidar los datos personales, ni reemplazar todas las inscripciones.
+
+**¿Qué significa el código 204?**
+"Sin contenido": la operación salió bien y la respuesta no trae cuerpo. Se usa al quitar una inscripción, porque no hay nada nuevo que devolver. En el frontend, `solicitar` tolera la ausencia de JSON y devuelve `null`.
+
+**¿Qué pasa si se intenta inscribir dos veces el mismo curso?**
+La clave primaria compuesta `(estudiante_id, curso_id)` hace fallar el `INSERT` con `ER_DUP_ENTRY`; el `catch` hace `rollback` y `responderErrorBaseDatos` lo traduce a **409** `El estudiante ya está inscrito en ese curso.`
+
+**¿Qué pasa si se cambia la carrera de un estudiante con cursos?**
+Si el PUT no indica qué hacer con los cursos, la API responde 409 y no cambia nada. Desde la interfaz, se pide confirmación y se envía `cursos: []`. Así, la carrera y el borrado de las inscripciones ocurren juntos en la misma transacción.

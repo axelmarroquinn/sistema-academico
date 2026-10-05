@@ -11,6 +11,8 @@
   --color-exito-fondo: #dcfce7;
   --color-error: #b91c1c;
   --color-error-fondo: #fee2e2;
+  --color-aviso: #b45309;
+  --color-aviso-fondo: #fef3c7;
   --color-foco: #f59e0b;
   --radio: 10px;
   --sombra: 0 1px 3px rgba(15, 23, 42, 0.08), 0 8px 24px rgba(15, 23, 42, 0.06);
@@ -112,13 +114,41 @@ body {
   background: rgba(255, 255, 255, 0.15);
 }
 
+/* Sección activa del menú */
+.menu a[aria-current="page"] {
+  background: #ffffff;
+  color: var(--color-primario-oscuro);
+  font-weight: 600;
+}
+
 /* ===== Contenido principal ===== */
 .principal {
   flex: 1;
-  display: grid;
-  gap: 1.5rem;
   padding-top: 1.5rem;
   padding-bottom: 2rem;
+}
+
+/* Cada vista (Estudiantes / Carreras y cursos) apila sus tarjetas */
+.vista {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.vista[hidden] {
+  display: none;
+}
+
+.vista__titulo {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+/* Dos tarjetas lado a lado en pantallas anchas */
+.dos-columnas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
 }
 
 .tarjeta {
@@ -212,6 +242,99 @@ body {
   margin: 0.2rem 0 0;
   font-size: 0.85rem;
   color: var(--color-error);
+}
+
+/* Dos campos cortos en la misma fila (código y créditos) */
+.campos--dos {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+/* ===== Grupo de casillas de cursos ===== */
+.grupo-cursos {
+  margin: 0.5rem 0 0;
+  padding: 0.75rem 1rem 0.5rem;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.grupo-cursos legend {
+  font-weight: 600;
+  padding: 0 0.3rem;
+}
+
+.grupo-cursos--error {
+  border-color: var(--color-error);
+}
+
+.grupo-cursos:disabled .grupo-cursos__lista {
+  opacity: 0.55;
+}
+
+.grupo-cursos__ayuda {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  color: var(--color-texto-suave);
+}
+
+.grupo-cursos__ayuda a {
+  color: var(--color-primario);
+  font-weight: 600;
+}
+
+.grupo-cursos__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.4rem 1rem;
+}
+
+.casilla {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+}
+
+.casilla:hover {
+  background: var(--color-fondo);
+}
+
+.casilla input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.15rem;
+  accent-color: var(--color-primario);
+  cursor: pointer;
+}
+
+.casilla input:disabled {
+  cursor: not-allowed;
+}
+
+.casilla label {
+  cursor: pointer;
+}
+
+/* Filtro sobre la tabla de cursos */
+.filtro {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filtro label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.filtro select {
+  font: inherit;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  background: var(--color-superficie);
 }
 
 .nota {
@@ -323,6 +446,17 @@ body {
   gap: 0.5rem;
 }
 
+/* Tablas con pocas columnas (carreras y cursos) */
+.tabla--compacta {
+  min-width: 560px;
+}
+
+/* Cursos de un estudiante, uno por línea */
+.lista-cursos {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
 /* Fila para los estados de carga, vacío y error */
 .tabla__estado {
   text-align: center;
@@ -364,6 +498,12 @@ body {
   color: #7f1d1d;
 }
 
+.mensaje--aviso {
+  background: var(--color-aviso-fondo);
+  border-color: var(--color-aviso);
+  color: #78350f;
+}
+
 .mensaje__texto {
   flex: 1;
 }
@@ -387,6 +527,78 @@ body {
   color: inherit;
 }
 
+/* ===== Panel de detalle e inscripciones ===== */
+.panel {
+  border-top: 4px solid var(--color-primario);
+}
+
+.grupo-cursos[hidden] {
+  display: none;
+}
+
+/* Datos del estudiante en modo lectura */
+.datos {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0 0 1.25rem;
+}
+
+.datos dt {
+  font-weight: 600;
+  color: var(--color-texto-suave);
+}
+
+.datos dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.panel__subtitulo {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.panel__cursos {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+}
+
+.panel__cursos li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0.9rem;
+}
+
+.panel__cursos li + li {
+  border-top: 1px solid var(--color-borde);
+}
+
+.panel__vacio {
+  color: var(--color-texto-suave);
+}
+
+/* Select "Agregar curso" y botón Inscribir en una fila */
+.inscribir {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.inscribir .campo {
+  flex: 1 1 260px;
+}
+
+.inscribir .boton {
+  margin-top: 1.85rem; /* alinea el botón con el select, debajo del label */
+}
+
 /* ===== Pie de página ===== */
 .pie {
   background: var(--color-superficie);
@@ -408,6 +620,19 @@ body {
 
   .acciones .boton {
     flex: 1;
+  }
+
+  .datos {
+    grid-template-columns: 1fr;
+  }
+
+  .datos dd {
+    margin-bottom: 0.4rem;
+  }
+
+  .inscribir .boton {
+    margin-top: 0;
+    width: 100%;
   }
 
   .mensajes {

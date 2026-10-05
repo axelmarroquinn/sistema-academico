@@ -1,0 +1,486 @@
+﻿**********************
+Inicio de la transcripción de Windows PowerShell
+Hora de inicio: 20261005121503
+Nombre de usuario: AMCOMPUTER\axelm
+Usuario RunAs: AMCOMPUTER\axelm
+Nombre de la configuración: 
+Máquina: AMCOMPUTER (Microsoft Windows NT 10.0.26200.0)
+Aplicación host: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\docs\probar-api.ps1
+Id. de proceso: 19156
+PSVersion: 5.1.26100.9444
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9444
+BuildVersion: 10.0.26100.9444
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+=== Estado de API y MySQL (GET /api/health) ===
+Codigo HTTP: 200
+{"status":"ok","database":"connected"}
+Esperado: 200 | Obtenido: 200 | OK
+
+=== Listar estudiantes (GET /api/estudiantes) ===
+Codigo HTTP: 200
+[{"id":1,"nombres":"Ana María","apellidos":"López García","correo":"ana.lopez@example.com","carnet":"2026-IS-001","fecha_nacimiento":"2004-03-15","carrera_id":1,"carrera_nombre":"Ingeniería en Sistemas","cursos":[{"id":2,"nombre":"Bases de Datos","codigo":"IS-BD102","creditos":4},{"id":1,"nombre":"Desarrollo Web","codigo":"IS-DW101","creditos":4},{"id":3,"nombre":"Programación I","codigo":"IS-PR101","creditos":5}]},{"id":2,"nombres":"Carlos","apellidos":"Méndez Ruiz","correo":"carlos.mendez@example.com","carnet":"2026-IS-002","fecha_nacimiento":"2003-11-02","carrera_id":1,"carrera_nombre":"Ingeniería en Sistemas","cursos":[{"id":2,"nombre":"Bases de Datos","codigo":"IS-BD102","creditos":4},{"id":4,"nombre":"Redes de Computadoras","codigo":"IS-RC201","creditos":4}]},{"id":3,"nombres":"Lucía","apellidos":"Pérez Soto","correo":"lucia.perez@example.com","carnet":"2026-AE-001","fecha_nacimiento":"2005-07-21","carrera_id":2,"carrera_nombre":"Administración de Empresas","cursos":[{"id":6,"nombre":"Administración I","codigo":"AE-AD101","creditos":3},{"id":5,"nombre":"Contabilidad General","codigo":"AE-CG101","creditos":3}]},{"id":4,"nombres":"José","apellidos":"Ramírez Castillo","correo":"jose.ramirez@example.com","carnet":"2026-AE-002","fecha_nacimiento":"2004-09-10","carrera_id":2,"carrera_nombre":"Administración de Empresas","cursos":[{"id":5,"nombre":"Contabilidad General","codigo":"AE-CG101","creditos":3},{"id":8,"nombre":"Mercadotecnia","codigo":"AE-MK201","creditos":3},{"id":7,"nombre":"Microeconomía","codigo":"AE-MI101","creditos":3}]},{"id":5,"nombres":"Sofía","apellidos":"Hernández Morales","correo":"sofia.hernandez@example.com","carnet":"2026-PS-001","fecha_nacimiento":"2005-01-30","carrera_id":3,"carrera_nombre":"Psicología","cursos":[{"id":11,"nombre":"Estadística Aplicada","codigo":"PS-EA201","creditos":4},{"id":10,"nombre":"Psicología del Desarrollo","codigo":"PS-PD101","creditos":3},{"id":9,"nombre":"Psicología General","codigo":"PS-PG101","creditos":3}]},{"id":6,"nombres":"Diego","apellidos":"Juárez Pineda","correo":"diego.juarez@example.com","carnet":"2026-PS-002","fecha_nacimiento":null,"carrera_id":3,"carrera_nombre":"Psicología","cursos":[{"id":12,"nombre":"Neurociencias","codigo":"PS-NC201","creditos":4},{"id":9,"nombre":"Psicología General","codigo":"PS-PG101","creditos":3}]}]
+Esperado: 200 | Obtenido: 200 | OK
+Verificacion: Cada estudiante trae carrera_nombre y arreglo cursos -> OK
+
+=== Listar carreras (GET /api/carreras) ===
+Codigo HTTP: 200
+[{"id":2,"nombre":"Administración de Empresas","codigo":"AE","total_cursos":4},{"id":1,"nombre":"Ingeniería en Sistemas","codigo":"IS","total_cursos":4},{"id":3,"nombre":"Psicología","codigo":"PS","total_cursos":4}]
+Esperado: 200 | Obtenido: 200 | OK
+
+=== Listar cursos (GET /api/cursos) ===
+Codigo HTTP: 200
+[{"id":6,"carrera_id":2,"carrera_nombre":"Administración de Empresas","nombre":"Administración I","codigo":"AE-AD101","creditos":3},{"id":2,"carrera_id":1,"carrera_nombre":"Ingeniería en Sistemas","nombre":"Bases de Datos","codigo":"IS-BD102","creditos":4},{"id":5,"carrera_id":2,"carrera_nombre":"Administración de Empresas","nombre":"Contabilidad General","codigo":"AE-CG101","creditos":3},{"id":1,"carrera_id":1,"carrera_nombre":"Ingeniería en Sistemas","nombre":"Desarrollo Web","codigo":"IS-DW101","creditos":4},{"id":11,"carrera_id":3,"carrera_nombre":"Psicología","nombre":"Estadística Aplicada","codigo":"PS-EA201","creditos":4},{"id":8,"carrera_id":2,"carrera_nombre":"Administración de Empresas","nombre":"Mercadotecnia","codigo":"AE-MK201","creditos":3},{"id":7,"carrera_id":2,"carrera_nombre":"Administración de Empresas","nombre":"Microeconomía","codigo":"AE-MI101","creditos":3},{"id":12,"carrera_id":3,"carrera_nombre":"Psicología","nombre":"Neurociencias","codigo":"PS-NC201","creditos":4},{"id":3,"carrera_id":1,"carrera_nombre":"Ingeniería en Sistemas","nombre":"Programación I","codigo":"IS-PR101","creditos":5},{"id":10,"carrera_id":3,"carrera_nombre":"Psicología","nombre":"Psicología del Desarrollo","codigo":"PS-PD101","creditos":3},{"id":9,"carrera_id":3,"carrera_nombre":"Psicología","nombre":"Psicología General","codigo":"PS-PG101","creditos":3},{"id":4,"carrera_id":1,"carrera_nombre":"Ingeniería en Sistemas","nombre":"Redes de Computadoras","codigo":"IS-RC201","creditos":4}]
+Esperado: 200 | Obtenido: 200 | OK
+
+=== Crear carrera A (POST /api/carreras) ===
+Codigo HTTP: 201
+{"id":11,"nombre":"Carrera Prueba A 20261005121503","codigo":"PA1005121503","total_cursos":0}
+Esperado: 201 | Obtenido: 201 | OK
+
+=== Crear carrera B (POST /api/carreras) ===
+Codigo HTTP: 201
+{"id":12,"nombre":"Carrera Prueba B 20261005121503","codigo":"PB1005121503","total_cursos":0}
+Esperado: 201 | Obtenido: 201 | OK
+
+=== Carrera duplicada (POST /api/carreras) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Ya existe una carrera con ese nombre o código."}"
+Codigo HTTP: 409
+{"error":"Ya existe una carrera con ese nombre o código."}
+Esperado: 409 | Obtenido: 409 | OK
+
+=== Carrera invalida (POST /api/carreras) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["nombre es obligatorio y debe ser texto.","codigo es obligatorio y debe ser texto."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["nombre es obligatorio y debe ser texto.","codigo es obligatorio y debe ser texto."]}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== Crear carrera C (sin cursos) (POST /api/carreras) ===
+Codigo HTTP: 201
+{"id":14,"nombre":"Carrera Prueba C 20261005121503","codigo":"PC1005121503","total_cursos":0}
+Esperado: 201 | Obtenido: 201 | OK
+Verificacion: Carrera nueva con total_cursos = 0 -> OK
+
+=== Eliminar carrera sin cursos ni estudiantes (DELETE /api/carreras/14) ===
+Codigo HTTP: 200
+{"mensaje":"Carrera eliminada correctamente."}
+Esperado: 200 | Obtenido: 200 | OK
+
+=== Eliminar carrera inexistente (DELETE /api/carreras/999999) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Carrera no encontrada."}"
+Codigo HTTP: 404
+{"error":"Carrera no encontrada."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== Crear curso A1 (POST /api/cursos) ===
+Codigo HTTP: 201
+{"id":21,"carrera_id":11,"carrera_nombre":"Carrera Prueba A 20261005121503","nombre":"Curso A1 20261005121503","codigo":"A11005121503","creditos":4}
+Esperado: 201 | Obtenido: 201 | OK
+
+=== Crear curso A2 sin creditos (POST /api/cursos) ===
+Codigo HTTP: 201
+{"id":22,"carrera_id":11,"carrera_nombre":"Carrera Prueba A 20261005121503","nombre":"Curso A2 20261005121503","codigo":"A21005121503","creditos":3}
+Esperado: 201 | Obtenido: 201 | OK
+Verificacion: Creditos por defecto = 3 -> OK
+
+=== Crear curso A3 (POST /api/cursos) ===
+Codigo HTTP: 201
+{"id":23,"carrera_id":11,"carrera_nombre":"Carrera Prueba A 20261005121503","nombre":"Curso A3 20261005121503","codigo":"A31005121503","creditos":5}
+Esperado: 201 | Obtenido: 201 | OK
+
+=== Crear curso B1 (POST /api/cursos) ===
+Codigo HTTP: 201
+{"id":24,"carrera_id":12,"carrera_nombre":"Carrera Prueba B 20261005121503","nombre":"Curso B1 20261005121503","codigo":"B11005121503","creditos":3}
+Esperado: 201 | Obtenido: 201 | OK
+
+=== Curso con carrera inexistente (POST /api/cursos) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["La carrera indicada no existe."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["La carrera indicada no existe."]}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== Curso con codigo duplicado (POST /api/cursos) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Ya existe un curso con ese código o con ese nombre en la carrera."}"
+Codigo HTTP: 409
+{"error":"Ya existe un curso con ese código o con ese nombre en la carrera."}
+Esperado: 409 | Obtenido: 409 | OK
+
+=== Curso con nombre duplicado en la carrera (POST /api/cursos) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Ya existe un curso con ese código o con ese nombre en la carrera."}"
+Codigo HTTP: 409
+{"error":"Ya existe un curso con ese código o con ese nombre en la carrera."}
+Esperado: 409 | Obtenido: 409 | OK
+
+=== Curso con creditos fuera de rango (POST /api/cursos) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["creditos debe ser un entero entre 1 y 30."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["creditos debe ser un entero entre 1 y 30."]}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== Filtrar cursos por carrera (GET /api/cursos?carrera_id=11) ===
+Codigo HTTP: 200
+[{"id":21,"carrera_id":11,"carrera_nombre":"Carrera Prueba A 20261005121503","nombre":"Curso A1 20261005121503","codigo":"A11005121503","creditos":4},{"id":22,"carrera_id":11,"carrera_nombre":"Carrera Prueba A 20261005121503","nombre":"Curso A2 20261005121503","codigo":"A21005121503","creditos":3},{"id":23,"carrera_id":11,"carrera_nombre":"Carrera Prueba A 20261005121503","nombre":"Curso A3 20261005121503","codigo":"A31005121503","creditos":5}]
+Esperado: 200 | Obtenido: 200 | OK
+Verificacion: El filtro devuelve solo los 3 cursos de la carrera A -> OK
+
+=== Filtro con carrera_id invalido (GET /api/cursos?carrera_id=abc) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"carrera_id debe ser un entero positivo."}"
+Codigo HTTP: 400
+{"error":"carrera_id debe ser un entero positivo."}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== Crear estudiante con 2 cursos de su carrera (POST /api/estudiantes) ===
+Codigo HTTP: 201
+{"id":12,"nombres":"Estudiante","apellidos":"Prueba uno","correo":"est.uno.20261005121503@example.com","carnet":"EST-uno-1005121503","fecha_nacimiento":"2004-05-20","carrera_id":11,"carrera_nombre":"Carrera Prueba A 20261005121503","cursos":[{"id":21,"nombre":"Curso A1 20261005121503","codigo":"A11005121503","creditos":4},{"id":22,"nombre":"Curso A2 20261005121503","codigo":"A21005121503","creditos":3}]}
+Esperado: 201 | Obtenido: 201 | OK
+Verificacion: La respuesta trae la carrera A y los cursos A1 y A2 -> OK
+
+=== Estudiante con un curso de otra carrera (POST /api/estudiantes) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["Los cursos con id 24 no pertenecen a la carrera indicada."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["Los cursos con id 24 no pertenecen a la carrera indicada."]}
+Esperado: 400 | Obtenido: 400 | OK
+Verificacion: Los detalles indican el curso de otra carrera -> OK
+
+=== Estudiante con cursos vacios (POST /api/estudiantes) ===
+Codigo HTTP: 201
+{"id":13,"nombres":"Estudiante","apellidos":"Prueba tres","correo":"est.tres.20261005121503@example.com","carnet":"EST-tres-1005121503","fecha_nacimiento":"2004-05-20","carrera_id":11,"carrera_nombre":"Carrera Prueba A 20261005121503","cursos":[]}
+Esperado: 201 | Obtenido: 201 | OK
+Verificacion: Registrado con cursos = [] -> OK
+
+=== Estudiante con cursos que no es arreglo (POST /api/estudiantes) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["cursos debe ser un arreglo de IDs de curso."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["cursos debe ser un arreglo de IDs de curso."]}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== Estudiante con cursos repetidos (POST /api/estudiantes) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["cursos no puede tener IDs repetidos (repetidos: 21)."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["cursos no puede tener IDs repetidos (repetidos: 21)."]}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== Estudiante con curso inexistente (POST /api/estudiantes) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["Los cursos con id 999999 no existen."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["Los cursos con id 999999 no existen."]}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== Correo duplicado (POST) (POST /api/estudiantes) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"El correo o carnet ya está registrado."}"
+Codigo HTTP: 409
+{"error":"El correo o carnet ya está registrado."}
+Esperado: 409 | Obtenido: 409 | OK
+
+=== Obtener el estudiante creado (GET /api/estudiantes/12) ===
+Codigo HTTP: 200
+{"id":12,"nombres":"Estudiante","apellidos":"Prueba uno","correo":"est.uno.20261005121503@example.com","carnet":"EST-uno-1005121503","fecha_nacimiento":"2004-05-20","carrera_id":11,"carrera_nombre":"Carrera Prueba A 20261005121503","cursos":[{"id":21,"nombre":"Curso A1 20261005121503","codigo":"A11005121503","creditos":4},{"id":22,"nombre":"Curso A2 20261005121503","codigo":"A21005121503","creditos":3}]}
+Esperado: 200 | Obtenido: 200 | OK
+
+=== PUT que reemplaza los cursos (PUT /api/estudiantes/12) ===
+Codigo HTTP: 200
+{"id":12,"nombres":"Estudiante","apellidos":"Prueba uno","correo":"est.uno.20261005121503@example.com","carnet":"EST-uno-1005121503","fecha_nacimiento":"2004-05-20","carrera_id":11,"carrera_nombre":"Carrera Prueba A 20261005121503","cursos":[{"id":23,"nombre":"Curso A3 20261005121503","codigo":"A31005121503","creditos":5}]}
+Esperado: 200 | Obtenido: 200 | OK
+Verificacion: Despues del PUT solo queda el curso A3 -> OK
+
+=== PUT que cambia de carrera con cursos de la anterior (PUT /api/estudiantes/12) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["Los cursos con id 23 no pertenecen a la carrera indicada."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["Los cursos con id 23 no pertenecen a la carrera indicada."]}
+Esperado: 400 | Obtenido: 400 | OK
+
+ID del estudiante de prueba (est.uno.20261005121503@example.com): 12
+ID del estudiante existente (ana.lopez@example.com): 1
+
+=== PUT con correo de otro estudiante (PUT /api/estudiantes/12) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"El correo o carnet ya está registrado."}"
+Codigo HTTP: 409
+{"error":"El correo o carnet ya está registrado."}
+Esperado: 409 | Obtenido: 409 | OK
+
+=== Eliminar curso con estudiantes inscritos (DELETE /api/cursos/23) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"No se puede eliminar el curso porque tiene 1 estudiante(s) inscrito(s). Retire primero las inscripciones."}"
+Codigo HTTP: 409
+{"error":"No se puede eliminar el curso porque tiene 1 estudiante(s) inscrito(s). Retire primero las inscripciones."}
+Esperado: 409 | Obtenido: 409 | OK
+
+=== Eliminar carrera con cursos o estudiantes (DELETE /api/carreras/11) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"No se puede eliminar la carrera porque tiene 3 curso(s) y 2 estudiante(s) asociados. Elimínelos primero."}"
+Codigo HTTP: 409
+{"error":"No se puede eliminar la carrera porque tiene 3 curso(s) y 2 estudiante(s) asociados. Elimínelos primero."}
+Esperado: 409 | Obtenido: 409 | OK
+
+=== Eliminar estudiante (DELETE /api/estudiantes/12) ===
+Codigo HTTP: 200
+{"mensaje":"Estudiante eliminado correctamente."}
+Esperado: 200 | Obtenido: 200 | OK
+
+=== Obtener el estudiante eliminado (GET /api/estudiantes/12) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Estudiante no encontrado."}"
+Codigo HTTP: 404
+{"error":"Estudiante no encontrado."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== Eliminar curso cuyas inscripciones borro el CASCADE (DELETE /api/cursos/23) ===
+Codigo HTTP: 200
+{"mensaje":"Curso eliminado correctamente."}
+Esperado: 200 | Obtenido: 200 | OK
+
+=== Registrar estudiante sin cursos (sin la clave cursos) (POST /api/estudiantes) ===
+Codigo HTTP: 201
+{"id":15,"nombres":"Estudiante","apellidos":"Prueba ins","correo":"est.ins.20261005121503@example.com","carnet":"EST-ins-1005121503","fecha_nacimiento":"2004-05-20","carrera_id":11,"carrera_nombre":"Carrera Prueba A 20261005121503","cursos":[]}
+Esperado: 201 | Obtenido: 201 | OK
+Verificacion: Registrado sin inscripciones -> OK
+
+=== Listar cursos inscritos (vacio) (GET /api/estudiantes/15/cursos) ===
+Codigo HTTP: 200
+[]
+Esperado: 200 | Obtenido: 200 | OK
+
+=== Inscribir curso A1 con cursoId (POST /api/estudiantes/15/cursos) ===
+Codigo HTTP: 201
+{"id":21,"nombre":"Curso A1 20261005121503","codigo":"A11005121503","creditos":4}
+Esperado: 201 | Obtenido: 201 | OK
+Verificacion: La respuesta trae el curso A1 -> OK
+
+=== Inscribir curso A2 con curso_id (POST /api/estudiantes/15/cursos) ===
+Codigo HTTP: 201
+{"id":22,"nombre":"Curso A2 20261005121503","codigo":"A21005121503","creditos":3}
+Esperado: 201 | Obtenido: 201 | OK
+
+=== Inscribir un curso ya inscrito (POST /api/estudiantes/15/cursos) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"El estudiante ya está inscrito en ese curso."}"
+Codigo HTTP: 409
+{"error":"El estudiante ya está inscrito en ese curso."}
+Esperado: 409 | Obtenido: 409 | OK
+
+=== Inscribir un curso de otra carrera (POST /api/estudiantes/15/cursos) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"El curso no pertenece a la carrera del estudiante."}"
+Codigo HTTP: 400
+{"error":"El curso no pertenece a la carrera del estudiante."}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== Inscribir un curso inexistente (POST /api/estudiantes/15/cursos) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Curso no encontrado."}"
+Codigo HTTP: 404
+{"error":"Curso no encontrado."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== Inscribir con cursoId invalido (POST /api/estudiantes/15/cursos) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["cursoId es obligatorio y debe ser un entero positivo."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["cursoId es obligatorio y debe ser un entero positivo."]}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== Inscribir a un estudiante inexistente (POST /api/estudiantes/999999/cursos) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Estudiante no encontrado."}"
+Codigo HTTP: 404
+{"error":"Estudiante no encontrado."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== Listar cursos inscritos (2) (GET /api/estudiantes/15/cursos) ===
+Codigo HTTP: 200
+[{"id":21,"nombre":"Curso A1 20261005121503","codigo":"A11005121503","creditos":4},{"id":22,"nombre":"Curso A2 20261005121503","codigo":"A21005121503","creditos":3}]
+Esperado: 200 | Obtenido: 200 | OK
+Verificacion: Inscrito en A1 y A2 -> OK
+
+=== Listar cursos de un estudiante inexistente (GET /api/estudiantes/999999/cursos) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Estudiante no encontrado."}"
+Codigo HTTP: 404
+{"error":"Estudiante no encontrado."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== Quitar la inscripcion de A1 (DELETE /api/estudiantes/15/cursos/21) ===
+Codigo HTTP: 204
+Esperado: 204 | Obtenido: 204 | OK
+
+=== Quitar una inscripcion que no existe (DELETE /api/estudiantes/15/cursos/21) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"El estudiante no está inscrito en ese curso."}"
+Codigo HTTP: 404
+{"error":"El estudiante no está inscrito en ese curso."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== Quitar inscripcion de un estudiante inexistente (DELETE /api/estudiantes/999999/cursos/21) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Estudiante no encontrado."}"
+Codigo HTTP: 404
+{"error":"Estudiante no encontrado."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== PUT sin cursos conserva las inscripciones (PUT /api/estudiantes/15) ===
+Codigo HTTP: 200
+{"id":15,"nombres":"Estudiante","apellidos":"Prueba ins","correo":"est.ins.20261005121503@example.com","carnet":"EST-ins-1005121503","fecha_nacimiento":"2004-05-20","carrera_id":11,"carrera_nombre":"Carrera Prueba A 20261005121503","cursos":[{"id":22,"nombre":"Curso A2 20261005121503","codigo":"A21005121503","creditos":3}]}
+Esperado: 200 | Obtenido: 200 | OK
+Verificacion: Sigue inscrito solo en A2 -> OK
+
+=== PUT cambia de carrera sin cursos teniendo inscripciones (PUT /api/estudiantes/15) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"No se puede cambiar la carrera porque el estudiante tiene 1 curso(s) inscrito(s). Quite las inscripciones o envíe \"cursos\" con cursos de la nueva carrera (puede ser [])."}"
+Codigo HTTP: 409
+{"error":"No se puede cambiar la carrera porque el estudiante tiene 1 curso(s) inscrito(s). Quite las inscripciones o envíe \"cursos\" con cursos de la nueva carrera (puede ser [])."}
+Esperado: 409 | Obtenido: 409 | OK
+
+=== PUT cambia de carrera con cursos vacios (PUT /api/estudiantes/15) ===
+Codigo HTTP: 200
+{"id":15,"nombres":"Estudiante","apellidos":"Prueba ins","correo":"est.ins.20261005121503@example.com","carnet":"EST-ins-1005121503","fecha_nacimiento":"2004-05-20","carrera_id":12,"carrera_nombre":"Carrera Prueba B 20261005121503","cursos":[]}
+Esperado: 200 | Obtenido: 200 | OK
+Verificacion: Queda en la carrera B y sin inscripciones -> OK
+
+=== Estudiante inexistente (GET /api/estudiantes/999999) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Estudiante no encontrado."}"
+Codigo HTTP: 404
+{"error":"Estudiante no encontrado."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== Datos invalidos (POST /api/estudiantes) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["nombres es obligatorio y debe ser texto.","apellidos es obligatorio y debe ser texto.","carnet es obligatorio y debe ser texto.","correo debe tener un formato válido.","carrera_id es obligatorio y debe ser un entero positivo.","cursos debe ser un arreglo de IDs de curso."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["nombres es obligatorio y debe ser texto.","apellidos es obligatorio y debe ser texto.","carnet es obligatorio y debe ser texto.","correo debe tener un formato válido.","carrera_id es obligatorio y debe ser un entero positivo.","cursos debe ser un arreglo de IDs de curso."]}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== PUT a estudiante inexistente (PUT /api/estudiantes/999999) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Estudiante no encontrado."}"
+Codigo HTTP: 404
+{"error":"Estudiante no encontrado."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== DELETE a estudiante inexistente (DELETE /api/estudiantes/999999) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Estudiante no encontrado."}"
+Codigo HTTP: 404
+{"error":"Estudiante no encontrado."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== GET con ID no numerico (GET /api/estudiantes/abc) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"El id debe ser un entero positivo."}"
+Codigo HTTP: 400
+{"error":"El id debe ser un entero positivo."}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== POST con JSON malformado (POST /api/estudiantes) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"El cuerpo de la solicitud debe contener JSON válido."}"
+Codigo HTTP: 400
+{"error":"El cuerpo de la solicitud debe contener JSON válido."}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== POST con fecha_nacimiento futura (POST /api/estudiantes) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["fecha_nacimiento no puede ser futura."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["fecha_nacimiento no puede ser futura."]}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== Eliminar curso inexistente (DELETE /api/cursos/999999) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Curso no encontrado."}"
+Codigo HTTP: 404
+{"error":"Curso no encontrado."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== Ruta desconocida (GET /api/xyz) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Ruta no encontrada."}"
+Codigo HTTP: 404
+{"error":"Ruta no encontrada."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== LIMPIEZA ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Estudiante no encontrado."}"
+estudiantes 12 : ya no existia
+estudiantes 13 : eliminado
+estudiantes 15 : eliminado
+cursos 21 : eliminado
+cursos 22 : eliminado
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Curso no encontrado."}"
+cursos 23 : ya no existia
+cursos 24 : eliminado
+carreras 11 : eliminado
+carreras 12 : eliminado
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Carrera no encontrada."}"
+carreras 14 : ya no existia
+
+=== RESUMEN ===
+
+Prueba                                                          Esperado Obtenido Resultado
+------                                                          -------- -------- ---------
+Estado de API y MySQL                                                200      200 OK       
+Listar estudiantes                                                   200      200 OK       
+  (verif.) Cada estudiante trae carrera_nombre y arreglo cursos       si       si OK       
+Listar carreras                                                      200      200 OK       
+Listar cursos                                                        200      200 OK       
+Crear carrera A                                                      201      201 OK       
+Crear carrera B                                                      201      201 OK       
+Carrera duplicada                                                    409      409 OK       
+Carrera invalida                                                     400      400 OK       
+Crear carrera C (sin cursos)                                         201      201 OK       
+  (verif.) Carrera nueva con total_cursos = 0                         si       si OK       
+Eliminar carrera sin cursos ni estudiantes                           200      200 OK       
+Eliminar carrera inexistente                                         404      404 OK       
+Crear curso A1                                                       201      201 OK       
+Crear curso A2 sin creditos                                          201      201 OK       
+  (verif.) Creditos por defecto = 3                                   si       si OK       
+Crear curso A3                                                       201      201 OK       
+Crear curso B1                                                       201      201 OK       
+Curso con carrera inexistente                                        400      400 OK       
+Curso con codigo duplicado                                           409      409 OK       
+Curso con nombre duplicado en la carrera                             409      409 OK       
+Curso con creditos fuera de rango                                    400      400 OK       
+Filtrar cursos por carrera                                           200      200 OK       
+  (verif.) El filtro devuelve solo los 3 cursos de la carrera A       si       si OK       
+Filtro con carrera_id invalido                                       400      400 OK       
+Crear estudiante con 2 cursos de su carrera                          201      201 OK       
+  (verif.) La respuesta trae la carrera A y los cursos A1 y A2        si       si OK       
+Estudiante con un curso de otra carrera                              400      400 OK       
+  (verif.) Los detalles indican el curso de otra carrera              si       si OK       
+Estudiante con cursos vacios                                         201      201 OK       
+  (verif.) Registrado con cursos = []                                 si       si OK       
+Estudiante con cursos que no es arreglo                              400      400 OK       
+Estudiante con cursos repetidos                                      400      400 OK       
+Estudiante con curso inexistente                                     400      400 OK       
+Correo duplicado (POST)                                              409      409 OK       
+Obtener el estudiante creado                                         200      200 OK       
+PUT que reemplaza los cursos                                         200      200 OK       
+  (verif.) Despues del PUT solo queda el curso A3                     si       si OK       
+PUT que cambia de carrera con cursos de la anterior                  400      400 OK       
+PUT con correo de otro estudiante                                    409      409 OK       
+Eliminar curso con estudiantes inscritos                             409      409 OK       
+Eliminar carrera con cursos o estudiantes                            409      409 OK       
+Eliminar estudiante                                                  200      200 OK       
+Obtener el estudiante eliminado                                      404      404 OK       
+Eliminar curso cuyas inscripciones borro el CASCADE                  200      200 OK       
+Registrar estudiante sin cursos (sin la clave cursos)                201      201 OK       
+  (verif.) Registrado sin inscripciones                               si       si OK       
+Listar cursos inscritos (vacio)                                      200      200 OK       
+Inscribir curso A1 con cursoId                                       201      201 OK       
+  (verif.) La respuesta trae el curso A1                              si       si OK       
+Inscribir curso A2 con curso_id                                      201      201 OK       
+Inscribir un curso ya inscrito                                       409      409 OK       
+Inscribir un curso de otra carrera                                   400      400 OK       
+Inscribir un curso inexistente                                       404      404 OK       
+Inscribir con cursoId invalido                                       400      400 OK       
+Inscribir a un estudiante inexistente                                404      404 OK       
+Listar cursos inscritos (2)                                          200      200 OK       
+  (verif.) Inscrito en A1 y A2                                        si       si OK       
+Listar cursos de un estudiante inexistente                           404      404 OK       
+Quitar la inscripcion de A1                                          204      204 OK       
+Quitar una inscripcion que no existe                                 404      404 OK       
+Quitar inscripcion de un estudiante inexistente                      404      404 OK       
+PUT sin cursos conserva las inscripciones                            200      200 OK       
+  (verif.) Sigue inscrito solo en A2                                  si       si OK       
+PUT cambia de carrera sin cursos teniendo inscripciones              409      409 OK       
+PUT cambia de carrera con cursos vacios                              200      200 OK       
+  (verif.) Queda en la carrera B y sin inscripciones                  si       si OK       
+Estudiante inexistente                                               404      404 OK       
+Datos invalidos                                                      400      400 OK       
+PUT a estudiante inexistente                                         404      404 OK       
+DELETE a estudiante inexistente                                      404      404 OK       
+GET con ID no numerico                                               400      400 OK       
+POST con JSON malformado                                             400      400 OK       
+POST con fecha_nacimiento futura                                     400      400 OK       
+Eliminar curso inexistente                                           404      404 OK       
+Ruta desconocida                                                     404      404 OK
+Pruebas aprobadas: 76 de 76
+Evidencia guardada en: C:\Users\axelm\Coding\Proyectos\sistema-academico\docs\evidencias\pruebas-api-20261005-1215.txt
+**********************
+Fin de la transcripción de Windows PowerShell
+Hora de finalización: 20261005121505
+**********************

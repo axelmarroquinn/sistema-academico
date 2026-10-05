@@ -59,8 +59,9 @@ async function buscarEstudiante(conexion, id) {
 }
 
 // Inserta una fila en inscripciones por cada curso. Se llama dentro de una transacción.
+// cursosIds puede ser null (no se enviaron cursos) o []: en ambos casos no inserta nada.
 async function insertarInscripciones(conexion, estudianteId, cursosIds) {
-  for (const cursoId of cursosIds) {
+  for (const cursoId of cursosIds || []) {
     await conexion.execute(
       'INSERT INTO inscripciones (estudiante_id, curso_id) VALUES (?, ?)',
       [estudianteId, cursoId],
@@ -94,7 +95,7 @@ const obtener = async (req, res) => {
 
 const crear = async (req, res) => {
   // Toma campos de req.body, valida y, en una transacción, inserta al estudiante y sus
-  // inscripciones; devuelve 201, 400, 409 o 500.
+  // inscripciones (cursos es opcional); devuelve 201, 400, 409 o 500.
   try {
     const { errores, valores } = await validarEstudiante(req.body);
     if (errores.length) return res.status(400).json({ error: 'Hay datos inválidos.', detalles: errores });
@@ -126,8 +127,11 @@ const crear = async (req, res) => {
 };
 
 const actualizar = async (req, res) => {
-  // Toma id de req.params y campos de req.body; en una transacción actualiza al estudiante y
-  // reemplaza sus inscripciones; devuelve 200, 400, 404, 409 o 500.
+  // Toma id de req.params y campos de req.body; en una transacción actualiza al estudiante.
+  // Inscripciones: si el cuerpo trae "cursos" (aunque sea []), se reemplazan; si no lo trae,
+  // no se tocan. Regla de cambio de carrera: si cambia la carrera, no se envía "cursos" y el
+  // estudiante tiene inscripciones, responde 409 (no se borran inscripciones sin pedirlo).
+  // Devuelve 200, 400, 404, 409 o 500.
   try {
     const id = validarId(req.params.id);
     if (!id) return res.status(400).json({ error: 'El id debe ser un entero positivo.' });
@@ -140,18 +144,35 @@ const actualizar = async (req, res) => {
     const conexion = await pool.getConnection();
     try {
       await conexion.beginTransaction();
-      const [resultado] = await conexion.execute(
-        'UPDATE estudiantes SET nombres = ?, apellidos = ?, correo = ?, carnet = ?, carrera_id = ?, fecha_nacimiento = ? WHERE id = ?',
-        [valores.nombres, valores.apellidos, valores.correo, valores.carnet, valores.carrera_id, valores.fecha_nacimiento, id],
-      );
-      if (resultado.affectedRows === 0) {
+      // FOR UPDATE bloquea la fila del estudiante hasta el commit: nadie puede inscribirlo en
+      // otro curso mientras se decide el cambio de carrera.
+      const [actuales] = await conexion.execute('SELECT carrera_id FROM estudiantes WHERE id = ? FOR UPDATE', [id]);
+      if (actuales.length === 0) {
         // Otro usuario lo eliminó después de la comprobación inicial.
         await conexion.rollback();
         return res.status(404).json({ error: 'Estudiante no encontrado.' });
       }
-      // Reemplazo de inscripciones: se borran las anteriores y se insertan las enviadas.
-      await conexion.execute('DELETE FROM inscripciones WHERE estudiante_id = ?', [id]);
-      await insertarInscripciones(conexion, id, valores.cursos);
+
+      const cambiaCarrera = actuales[0].carrera_id !== valores.carrera_id;
+      if (cambiaCarrera && valores.cursos === null) {
+        const [conteo] = await conexion.execute('SELECT COUNT(*) AS total FROM inscripciones WHERE estudiante_id = ?', [id]);
+        if (conteo[0].total > 0) {
+          await conexion.rollback();
+          return res.status(409).json({
+            error: `No se puede cambiar la carrera porque el estudiante tiene ${conteo[0].total} curso(s) inscrito(s). Quite las inscripciones o envíe "cursos" con cursos de la nueva carrera (puede ser []).`,
+          });
+        }
+      }
+
+      await conexion.execute(
+        'UPDATE estudiantes SET nombres = ?, apellidos = ?, correo = ?, carnet = ?, carrera_id = ?, fecha_nacimiento = ? WHERE id = ?',
+        [valores.nombres, valores.apellidos, valores.correo, valores.carnet, valores.carrera_id, valores.fecha_nacimiento, id],
+      );
+      if (valores.cursos !== null) {
+        // Reemplazo de inscripciones: se borran las anteriores y se insertan las enviadas.
+        await conexion.execute('DELETE FROM inscripciones WHERE estudiante_id = ?', [id]);
+        await insertarInscripciones(conexion, id, valores.cursos);
+      }
       await conexion.commit();
     } catch (error) {
       await conexion.rollback();

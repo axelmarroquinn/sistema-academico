@@ -117,17 +117,19 @@ function BorrarSilencioso($ruta) {
 }
 
 # Arma el cuerpo de un estudiante de prueba con los datos indicados.
+# Si $cursos es $null, el cuerpo NO lleva la clave "cursos" (registro o edicion sin tocar inscripciones).
 function DatosEstudiante($sufijo, $carreraId, $cursos, $correo = $null) {
   if (-not $correo) { $correo = "est.$sufijo.$marca@example.com" }
-  return @{
+  $datos = @{
     nombres = 'Estudiante'
     apellidos = "Prueba $sufijo"
     correo = $correo
     carnet = "EST-$sufijo-$corta"
     fecha_nacimiento = '2004-05-20'
     carrera_id = $carreraId
-    cursos = @($cursos)
   }
+  if ($null -ne $cursos) { $datos.cursos = @($cursos) }
+  return $datos
 }
 
 Start-Transcript -Path $archivoEvidencia | Out-Null
@@ -198,7 +200,13 @@ try {
       $r = Probar 'Estudiante con un curso de otra carrera' 'POST' '/api/estudiantes' 400 (DatosEstudiante 'dos' $carA.id @($a1.id, $b1.id))
       Registrar 'estudiantes' $r
       Verificar 'Los detalles indican el curso de otra carrera' ((@($r.detalles) -join ' ') -match "\b$($b1.id)\b")
-      $r = Probar 'Estudiante con cursos vacios' 'POST' '/api/estudiantes' 400 (DatosEstudiante 'tres' $carA.id @())
+      # cursos es opcional: un arreglo vacio es valido (el estudiante queda sin inscripciones)
+      $r = Probar 'Estudiante con cursos vacios' 'POST' '/api/estudiantes' 201 (DatosEstudiante 'tres' $carA.id @())
+      Registrar 'estudiantes' $r
+      Verificar 'Registrado con cursos = []' (($r.id -gt 0) -and (@($r.cursos).Count -eq 0))
+      $datosMal = DatosEstudiante 'tresb' $carA.id $null
+      $datosMal.cursos = 'x'
+      $r = Probar 'Estudiante con cursos que no es arreglo' 'POST' '/api/estudiantes' 400 $datosMal
       Registrar 'estudiantes' $r
       $r = Probar 'Estudiante con cursos repetidos' 'POST' '/api/estudiantes' 400 (DatosEstudiante 'cuatro' $carA.id @($a1.id, $a1.id))
       Registrar 'estudiantes' $r
@@ -237,6 +245,42 @@ try {
         Probar 'Eliminar curso cuyas inscripciones borro el CASCADE' 'DELETE' "/api/cursos/$($a3.id)" 200 | Out-Null
       } else {
         Omitir 'Pruebas que dependen del estudiante creado'
+      }
+
+      # ===== Inscripciones de un estudiante existente (/api/estudiantes/:id/cursos) =====
+      $ins = Probar 'Registrar estudiante sin cursos (sin la clave cursos)' 'POST' '/api/estudiantes' 201 (DatosEstudiante 'ins' $carA.id $null)
+      Registrar 'estudiantes' $ins
+      if ($ins.id) {
+        $rutaIns = "/api/estudiantes/$($ins.id)/cursos"
+        Verificar 'Registrado sin inscripciones' (@($ins.cursos).Count -eq 0)
+        Probar 'Listar cursos inscritos (vacio)' 'GET' $rutaIns 200 | Out-Null
+        $c = Probar 'Inscribir curso A1 con cursoId' 'POST' $rutaIns 201 @{ cursoId = $a1.id }
+        Verificar 'La respuesta trae el curso A1' ($c.id -eq $a1.id)
+        Probar 'Inscribir curso A2 con curso_id' 'POST' $rutaIns 201 @{ curso_id = $a2.id } | Out-Null
+        Probar 'Inscribir un curso ya inscrito' 'POST' $rutaIns 409 @{ cursoId = $a1.id } | Out-Null
+        Probar 'Inscribir un curso de otra carrera' 'POST' $rutaIns 400 @{ cursoId = $b1.id } | Out-Null
+        Probar 'Inscribir un curso inexistente' 'POST' $rutaIns 404 @{ cursoId = 999999 } | Out-Null
+        Probar 'Inscribir con cursoId invalido' 'POST' $rutaIns 400 @{ cursoId = 'x' } | Out-Null
+        Probar 'Inscribir a un estudiante inexistente' 'POST' '/api/estudiantes/999999/cursos' 404 @{ cursoId = $a1.id } | Out-Null
+        $inscritos = Probar 'Listar cursos inscritos (2)' 'GET' $rutaIns 200
+        $idsIns = @($inscritos | ForEach-Object { $_.id })
+        Verificar 'Inscrito en A1 y A2' (($idsIns.Count -eq 2) -and ($idsIns -contains $a1.id) -and ($idsIns -contains $a2.id))
+        Probar 'Listar cursos de un estudiante inexistente' 'GET' '/api/estudiantes/999999/cursos' 404 | Out-Null
+
+        Probar 'Quitar la inscripcion de A1' 'DELETE' "$rutaIns/$($a1.id)" 204 | Out-Null
+        Probar 'Quitar una inscripcion que no existe' 'DELETE' "$rutaIns/$($a1.id)" 404 | Out-Null
+        Probar 'Quitar inscripcion de un estudiante inexistente' 'DELETE' "/api/estudiantes/999999/cursos/$($a1.id)" 404 | Out-Null
+
+        # Regla de edicion: sin "cursos" no se tocan las inscripciones; cambiar de carrera con
+        # inscripciones exige enviar "cursos" de la nueva carrera (o []), si no responde 409.
+        $put = Probar 'PUT sin cursos conserva las inscripciones' 'PUT' "/api/estudiantes/$($ins.id)" 200 (DatosEstudiante 'ins' $carA.id $null $ins.correo)
+        $idsPut = @($put.cursos | ForEach-Object { $_.id })
+        Verificar 'Sigue inscrito solo en A2' (($idsPut.Count -eq 1) -and ($idsPut[0] -eq $a2.id))
+        Probar 'PUT cambia de carrera sin cursos teniendo inscripciones' 'PUT' "/api/estudiantes/$($ins.id)" 409 (DatosEstudiante 'ins' $carB.id $null $ins.correo) | Out-Null
+        $put = Probar 'PUT cambia de carrera con cursos vacios' 'PUT' "/api/estudiantes/$($ins.id)" 200 (DatosEstudiante 'ins' $carB.id @() $ins.correo)
+        Verificar 'Queda en la carrera B y sin inscripciones' (($put.carrera_id -eq $carB.id) -and (@($put.cursos).Count -eq 0))
+      } else {
+        Omitir 'Pruebas de inscripciones'
       }
     }
   }

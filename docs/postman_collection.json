@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "3c452c62-d13c-47d2-9240-5eb64cb62563",
     "name": "Sistema Académico API",
-    "description": "Carreras, cursos, estudiantes con inscripciones y salud del servidor. Usa los IDs fijos de database/database.sql (carrera 1 = Sistemas con cursos 1-4; carrera 2 = Administración con cursos 5-8). Las peticiones \"Crear\" guardan el id creado en una variable que usan \"Actualizar\" y \"Eliminar\". Ejecute las carpetas en orden.",
+    "description": "Carreras, cursos, estudiantes, inscripciones de un estudiante existente y salud del servidor. Usa los IDs fijos de database/database.sql (carrera 1 = Sistemas con cursos 1-4; carrera 2 = Administración con cursos 5-8). Las peticiones \"Crear\" guardan el id creado en una variable que usan \"Actualizar\" y \"Eliminar\". Ejecute las carpetas en orden.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -336,7 +336,7 @@
           }
         },
         {
-          "name": "Crear con cursos vacíos (400)",
+          "name": "Crear con cursos que no es arreglo (400)",
           "request": {
             "method": "POST",
             "header": [
@@ -348,7 +348,7 @@
             "url": "{{baseUrl}}/api/estudiantes",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombres\": \"María Fernanda\",\n  \"apellidos\": \"Gómez López\",\n  \"correo\": \"maria.{{$timestamp}}@example.com\",\n  \"carnet\": \"PM-{{$timestamp}}\",\n  \"fecha_nacimiento\": \"2004-05-20\",\n  \"carrera_id\": 1,\n  \"cursos\": []\n}",
+              "raw": "{\n  \"nombres\": \"María Fernanda\",\n  \"apellidos\": \"Gómez López\",\n  \"correo\": \"maria.{{$timestamp}}@example.com\",\n  \"carnet\": \"PM-{{$timestamp}}\",\n  \"fecha_nacimiento\": \"2004-05-20\",\n  \"carrera_id\": 1,\n  \"cursos\": \"x\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -465,6 +465,189 @@
                 }
               }
             }
+          }
+        },
+        {
+          "name": "Actualizar sin cursos: conserva inscripciones (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteNuevoId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"María Fernanda\",\n  \"apellidos\": \"Gómez Pérez\",\n  \"correo\": \"maria.sin.{{$timestamp}}@example.com\",\n  \"carnet\": \"PM-S-{{$timestamp}}\",\n  \"carrera_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Actualizar: cambiar de carrera sin cursos teniendo inscripciones (409)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteNuevoId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"María Fernanda\",\n  \"apellidos\": \"Gómez Pérez\",\n  \"correo\": \"maria.409.{{$timestamp}}@example.com\",\n  \"carnet\": \"PM-C-{{$timestamp}}\",\n  \"carrera_id\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inscripciones",
+      "item": [
+        {
+          "name": "Cursos inscritos del estudiante (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteNuevoId}}/cursos"
+          }
+        },
+        {
+          "name": "Inscribir curso 1 (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteNuevoId}}/cursos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cursoId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Inscribir curso ya inscrito (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteNuevoId}}/cursos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cursoId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Inscribir curso de otra carrera (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteNuevoId}}/cursos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cursoId\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Inscribir curso inexistente (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteNuevoId}}/cursos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cursoId\": 999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Inscribir a estudiante inexistente (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes/999999/cursos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cursoId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Quitar inscripción del curso 1 (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteNuevoId}}/cursos/1"
+          }
+        },
+        {
+          "name": "Quitar inscripción inexistente (404)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteNuevoId}}/cursos/1"
           }
         },
         {

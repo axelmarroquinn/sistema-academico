@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Sistema Académico: registro, consulta, edición y eliminación de estudiantes y sus cursos.">
+  <meta name="description" content="Sistema Académico: gestión de estudiantes, carreras, cursos e inscripciones.">
   <title>Sistema Académico | Gestión de Estudiantes y Cursos</title>
   <link rel="stylesheet" href="styles.css">
+  <!-- Los módulos ES se cargan diferidos: el HTML ya existe cuando se ejecutan -->
+  <script type="module" src="js/main.js"></script>
 </head>
 <body>
   <a class="saltar" href="#contenido">Saltar al contenido</a>
@@ -14,12 +16,12 @@
     <div class="contenedor encabezado__contenido">
       <div>
         <h1 class="encabezado__titulo">Sistema Académico</h1>
-        <p class="encabezado__subtitulo">Gestión de estudiantes y cursos</p>
+        <p class="encabezado__subtitulo">Gestión de estudiantes, carreras y cursos</p>
       </div>
-      <nav aria-label="Navegación principal">
+      <nav aria-label="Secciones">
         <ul class="menu">
-          <li><a href="#seccion-formulario">Registrar</a></li>
-          <li><a href="#seccion-listado">Estudiantes</a></li>
+          <li><a href="#estudiantes" data-vista="estudiantes">Estudiantes</a></li>
+          <li><a href="#carreras-cursos" data-vista="carreras-cursos">Carreras y cursos</a></li>
         </ul>
       </nav>
     </div>
@@ -29,86 +31,224 @@
   <div id="mensajes" class="mensajes" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <main id="contenido" class="contenedor principal">
-    <section id="seccion-formulario" class="tarjeta" aria-labelledby="titulo-formulario">
-      <h2 id="titulo-formulario" class="tarjeta__titulo">Registrar estudiante</h2>
 
-      <form id="formulario" novalidate>
-        <div class="campos">
-          <div class="campo">
-            <label for="nombres">Nombres <span class="obligatorio" aria-hidden="true">*</span></label>
-            <input id="nombres" name="nombres" type="text" maxlength="100" autocomplete="given-name" required aria-describedby="error-nombres">
-            <p id="error-nombres" class="campo__error"></p>
+    <!-- ===================== VISTA ESTUDIANTES ===================== -->
+    <div id="vista-estudiantes" class="vista" data-vista="estudiantes">
+      <h2 class="vista__titulo" tabindex="-1">Estudiantes</h2>
+
+      <section class="tarjeta" aria-labelledby="titulo-form-estudiante">
+        <h3 id="titulo-form-estudiante" class="tarjeta__titulo">Registrar estudiante</h3>
+
+        <form id="form-estudiante" novalidate>
+          <div class="campos">
+            <div class="campo">
+              <label for="est-nombres">Nombres <span class="obligatorio" aria-hidden="true">*</span></label>
+              <input id="est-nombres" type="text" maxlength="100" autocomplete="given-name" required aria-describedby="error-est-nombres">
+              <p id="error-est-nombres" class="campo__error"></p>
+            </div>
+
+            <div class="campo">
+              <label for="est-apellidos">Apellidos <span class="obligatorio" aria-hidden="true">*</span></label>
+              <input id="est-apellidos" type="text" maxlength="100" autocomplete="family-name" required aria-describedby="error-est-apellidos">
+              <p id="error-est-apellidos" class="campo__error"></p>
+            </div>
+
+            <div class="campo">
+              <label for="est-correo">Correo <span class="obligatorio" aria-hidden="true">*</span></label>
+              <input id="est-correo" type="email" maxlength="254" autocomplete="email" required aria-describedby="error-est-correo">
+              <p id="error-est-correo" class="campo__error"></p>
+            </div>
+
+            <div class="campo">
+              <label for="est-carnet">Carnet <span class="obligatorio" aria-hidden="true">*</span></label>
+              <input id="est-carnet" type="text" maxlength="30" required aria-describedby="error-est-carnet">
+              <p id="error-est-carnet" class="campo__error"></p>
+            </div>
+
+            <div class="campo">
+              <label for="est-fecha">Fecha de nacimiento <span class="opcional">(opcional)</span></label>
+              <input id="est-fecha" type="date" aria-describedby="error-est-fecha">
+              <p id="error-est-fecha" class="campo__error"></p>
+            </div>
+
+            <div class="campo">
+              <label for="est-carrera">Carrera <span class="obligatorio" aria-hidden="true">*</span></label>
+              <select id="est-carrera" required aria-describedby="error-est-carrera">
+                <option value="">Cargando carreras…</option>
+              </select>
+              <p id="error-est-carrera" class="campo__error"></p>
+            </div>
           </div>
 
-          <div class="campo">
-            <label for="apellidos">Apellidos <span class="obligatorio" aria-hidden="true">*</span></label>
-            <input id="apellidos" name="apellidos" type="text" maxlength="100" autocomplete="family-name" required aria-describedby="error-apellidos">
-            <p id="error-apellidos" class="campo__error"></p>
-          </div>
+          <!-- Cursos opcionales al registrar; se ocultan al editar (las inscripciones se gestionan en "Ver / Cursos") -->
+          <fieldset id="est-cursos" class="grupo-cursos" disabled aria-describedby="ayuda-est-cursos error-est-cursos">
+            <legend>Cursos <span class="opcional">(opcional)</span></legend>
+            <p id="ayuda-est-cursos" class="grupo-cursos__ayuda">Seleccione primero una carrera para ver sus cursos.</p>
+            <div id="lista-est-cursos" class="grupo-cursos__lista"></div>
+            <p id="error-est-cursos" class="campo__error"></p>
+          </fieldset>
 
-          <div class="campo">
-            <label for="correo">Correo <span class="obligatorio" aria-hidden="true">*</span></label>
-            <input id="correo" name="correo" type="email" maxlength="254" autocomplete="email" required aria-describedby="error-correo">
-            <p id="error-correo" class="campo__error"></p>
-          </div>
+          <p class="nota"><span aria-hidden="true">*</span> Campo obligatorio.</p>
 
-          <div class="campo">
-            <label for="carnet">Carnet <span class="obligatorio" aria-hidden="true">*</span></label>
-            <input id="carnet" name="carnet" type="text" maxlength="30" required aria-describedby="error-carnet">
-            <p id="error-carnet" class="campo__error"></p>
+          <div class="acciones">
+            <button id="est-guardar" type="submit" class="boton boton--primario">Guardar</button>
+            <button id="est-cancelar" type="button" class="boton boton--secundario">Cancelar</button>
           </div>
+        </form>
+      </section>
 
-          <div class="campo">
-            <label for="fecha_nacimiento">Fecha de nacimiento <span class="opcional">(opcional)</span></label>
-            <input id="fecha_nacimiento" name="fecha_nacimiento" type="date" aria-describedby="error-fecha_nacimiento">
-            <p id="error-fecha_nacimiento" class="campo__error"></p>
+      <!-- Panel de detalle: datos en modo lectura e inscripciones (js/inscripciones.js) -->
+      <section id="panel-estudiante" class="tarjeta panel" aria-labelledby="panel-titulo" hidden>
+        <div class="tarjeta__cabecera">
+          <h3 id="panel-titulo" class="tarjeta__titulo" tabindex="-1">Estudiante</h3>
+          <div class="acciones">
+            <button id="panel-editar" type="button" class="boton boton--secundario boton--pequeno">Editar datos</button>
+            <button id="panel-cerrar" type="button" class="boton boton--secundario boton--pequeno">Cerrar</button>
           </div>
+        </div>
 
+        <dl id="panel-datos" class="datos"></dl>
+
+        <h4 id="panel-subtitulo-cursos" class="panel__subtitulo">Cursos inscritos</h4>
+        <ul id="panel-cursos" class="panel__cursos" aria-labelledby="panel-subtitulo-cursos"></ul>
+
+        <form id="form-inscribir" class="inscribir" novalidate>
           <div class="campo">
-            <label for="curso_id">Curso <span class="obligatorio" aria-hidden="true">*</span></label>
-            <select id="curso_id" name="curso_id" required aria-describedby="error-curso_id">
-              <option value="">Cargando cursos…</option>
+            <label for="panel-agregar">Agregar curso</label>
+            <select id="panel-agregar" aria-describedby="error-panel-agregar"></select>
+            <p id="error-panel-agregar" class="campo__error"></p>
+          </div>
+          <button id="panel-inscribir" type="submit" class="boton boton--primario">Inscribir</button>
+        </form>
+      </section>
+
+      <section class="tarjeta" aria-labelledby="titulo-tabla-estudiantes">
+        <div class="tarjeta__cabecera">
+          <h3 id="titulo-tabla-estudiantes" class="tarjeta__titulo">Estudiantes registrados</h3>
+          <button id="est-recargar" type="button" class="boton boton--secundario boton--pequeno">Recargar</button>
+        </div>
+        <div class="tabla-contenedor" tabindex="0" role="region" aria-label="Tabla de estudiantes, desplazable horizontalmente">
+          <table class="tabla">
+            <caption>Estudiantes con su carrera y los cursos en que están inscritos</caption>
+            <thead>
+              <tr>
+                <th scope="col">Carnet</th>
+                <th scope="col">Nombre completo</th>
+                <th scope="col">Correo</th>
+                <th scope="col">Carrera</th>
+                <th scope="col">Cursos</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-estudiantes"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===================== VISTA CARRERAS Y CURSOS ===================== -->
+    <div id="vista-carreras-cursos" class="vista" data-vista="carreras-cursos" hidden>
+      <h2 class="vista__titulo" tabindex="-1">Carreras y cursos</h2>
+
+      <div class="dos-columnas">
+        <section class="tarjeta" aria-labelledby="titulo-form-carrera">
+          <h3 id="titulo-form-carrera" class="tarjeta__titulo">Nueva carrera</h3>
+          <form id="form-carrera" novalidate>
+            <div class="campo">
+              <label for="car-nombre">Nombre <span class="obligatorio" aria-hidden="true">*</span></label>
+              <input id="car-nombre" type="text" maxlength="120" required aria-describedby="error-car-nombre">
+              <p id="error-car-nombre" class="campo__error"></p>
+            </div>
+            <div class="campo">
+              <label for="car-codigo">Código <span class="obligatorio" aria-hidden="true">*</span></label>
+              <input id="car-codigo" type="text" maxlength="20" required aria-describedby="error-car-codigo">
+              <p id="error-car-codigo" class="campo__error"></p>
+            </div>
+            <div class="acciones">
+              <button id="car-guardar" type="submit" class="boton boton--primario">Crear carrera</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="tarjeta" aria-labelledby="titulo-form-curso">
+          <h3 id="titulo-form-curso" class="tarjeta__titulo">Nuevo curso</h3>
+          <form id="form-curso" novalidate>
+            <div class="campo">
+              <label for="cur-carrera">Carrera <span class="obligatorio" aria-hidden="true">*</span></label>
+              <select id="cur-carrera" required aria-describedby="error-cur-carrera">
+                <option value="">Cargando carreras…</option>
+              </select>
+              <p id="error-cur-carrera" class="campo__error"></p>
+            </div>
+            <div class="campo">
+              <label for="cur-nombre">Nombre <span class="obligatorio" aria-hidden="true">*</span></label>
+              <input id="cur-nombre" type="text" maxlength="150" required aria-describedby="error-cur-nombre">
+              <p id="error-cur-nombre" class="campo__error"></p>
+            </div>
+            <div class="campos campos--dos">
+              <div class="campo">
+                <label for="cur-codigo">Código <span class="obligatorio" aria-hidden="true">*</span></label>
+                <input id="cur-codigo" type="text" maxlength="20" required aria-describedby="error-cur-codigo">
+                <p id="error-cur-codigo" class="campo__error"></p>
+              </div>
+              <div class="campo">
+                <label for="cur-creditos">Créditos <span class="obligatorio" aria-hidden="true">*</span></label>
+                <input id="cur-creditos" type="number" min="1" max="30" step="1" value="3" required aria-describedby="error-cur-creditos">
+                <p id="error-cur-creditos" class="campo__error"></p>
+              </div>
+            </div>
+            <div class="acciones">
+              <button id="cur-guardar" type="submit" class="boton boton--primario">Crear curso</button>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <section class="tarjeta" aria-labelledby="titulo-tabla-carreras">
+        <h3 id="titulo-tabla-carreras" class="tarjeta__titulo">Carreras</h3>
+        <div class="tabla-contenedor" tabindex="0" role="region" aria-label="Tabla de carreras, desplazable horizontalmente">
+          <table class="tabla tabla--compacta">
+            <caption>Carreras con su total de cursos</caption>
+            <thead>
+              <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Código</th>
+                <th scope="col">Total de cursos</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-carreras"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="tarjeta" aria-labelledby="titulo-tabla-cursos">
+        <div class="tarjeta__cabecera">
+          <h3 id="titulo-tabla-cursos" class="tarjeta__titulo">Cursos</h3>
+          <div class="filtro">
+            <label for="filtro-carrera">Filtrar por carrera</label>
+            <select id="filtro-carrera">
+              <option value="">Todas las carreras</option>
             </select>
-            <p id="error-curso_id" class="campo__error"></p>
           </div>
         </div>
-
-        <p class="nota"><span aria-hidden="true">*</span> Campo obligatorio.</p>
-
-        <div class="acciones">
-          <button id="boton-guardar" type="submit" class="boton boton--primario">Guardar</button>
-          <button id="boton-cancelar" type="button" class="boton boton--secundario">Cancelar</button>
+        <div class="tabla-contenedor" tabindex="0" role="region" aria-label="Tabla de cursos, desplazable horizontalmente">
+          <table class="tabla tabla--compacta">
+            <caption>Cursos con su carrera y créditos</caption>
+            <thead>
+              <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Código</th>
+                <th scope="col">Créditos</th>
+                <th scope="col">Carrera</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-cursos"></tbody>
+          </table>
         </div>
-      </form>
-    </section>
-
-    <section id="seccion-listado" class="tarjeta" aria-labelledby="titulo-listado">
-      <div class="tarjeta__cabecera">
-        <h2 id="titulo-listado" class="tarjeta__titulo">Estudiantes registrados</h2>
-        <button id="boton-recargar" type="button" class="boton boton--secundario boton--pequeno">Recargar</button>
-      </div>
-
-      <!-- La tabla puede desplazarse horizontalmente en pantallas pequeñas -->
-      <div class="tabla-contenedor" tabindex="0" role="region" aria-label="Tabla de estudiantes, desplazable horizontalmente">
-        <table class="tabla">
-          <caption>Listado de estudiantes con su curso y carrera</caption>
-          <thead>
-            <tr>
-              <th scope="col">ID</th>
-              <th scope="col">Nombres</th>
-              <th scope="col">Apellidos</th>
-              <th scope="col">Correo</th>
-              <th scope="col">Carnet</th>
-              <th scope="col">Nacimiento</th>
-              <th scope="col">Curso</th>
-              <th scope="col">Carrera</th>
-              <th scope="col">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="cuerpo-tabla"></tbody>
-        </table>
-      </div>
-    </section>
+      </section>
+    </div>
   </main>
 
   <footer class="pie">
@@ -116,7 +256,5 @@
       <p>Proyecto final de Desarrollo Web · Universidad Mariano Gálvez de Guatemala</p>
     </div>
   </footer>
-
-  <script src="app.js"></script>
 </body>
 </html>

@@ -88,9 +88,15 @@ backend/
   package.json
   server.js
 frontend/
-  index.html
+  index.html          vistas "Estudiantes" y "Carreras y cursos"
   styles.css
-  app.js
+  js/
+    main.js           punto de entrada: navegación entre vistas e inicio
+    api.js            fetch() y conversión de errores (API_URL, solicitar, ErrorApi)
+    ui.js             mensajes, estados de carga, errores de campos y utilidades de DOM
+    estudiantes.js    tabla y formulario de estudiantes con carrera y cursos
+    carreras.js       carreras y cursos: crear, eliminar, listar y filtrar
+    inscripciones.js  panel de detalle del estudiante: inscribir y quitar cursos
 docs/
   postman_collection.json
 README.md
@@ -141,7 +147,7 @@ Requisitos: Node.js 20 o posterior y MySQL 8 o MariaDB instalado y en ejecución
 
 ## Abrir el frontend
 
-El frontend debe servirse por HTTP en el puerto 5500, porque la API solo acepta (CORS) los orígenes `http://localhost:5500` y `http://127.0.0.1:5500`. No funciona abriendo `index.html` con doble clic (`file://`).
+El frontend debe servirse por HTTP en el puerto 5500, por dos razones: la API solo acepta (CORS) los orígenes `http://localhost:5500` y `http://127.0.0.1:5500`, y los navegadores no cargan módulos ES (`<script type="module">`) desde `file://`. No funciona abriendo `index.html` con doble clic.
 
 1. Con el backend en ejecución, abra otra terminal en la raíz del proyecto y ejecute:
 
@@ -154,9 +160,12 @@ El frontend debe servirse por HTTP en el puerto 5500, porque la API solo acepta 
 2. Abra `http://localhost:5500` en el navegador.
 3. Detenga el servidor estático con `Ctrl+C`.
 
-La dirección de la API se configura en la constante `API_URL` al inicio de `frontend/app.js`.
+La dirección de la API se configura en la constante `API_URL` de `frontend/js/api.js`.
 
-> **Pendiente:** el frontend actual todavía usa el contrato anterior (un solo `curso_id` por estudiante). Hasta actualizarlo, crear y editar estudiantes desde la interfaz falla con 400 y la columna Curso de la tabla muestra `undefined (undefined)`.
+La interfaz tiene dos vistas que se cambian desde el menú sin recargar la página (`#estudiantes` y `#carreras-cursos`):
+
+- **Estudiantes:** se registra al estudiante con sus datos y su carrera; los cursos son opcionales al registrar. El botón **Ver / Cursos** de cada fila abre un panel con los datos en modo lectura, la lista de cursos inscritos (con **Quitar**) y un select **Agregar curso** con los cursos de su carrera en los que aún no está inscrito. **Editar datos** usa el mismo formulario, sin la sección de cursos.
+- **Carreras y cursos:** crear y eliminar carreras y cursos, y filtrar los cursos por carrera. Los cambios se reflejan de inmediato en la vista Estudiantes.
 
 ## Endpoints
 
@@ -174,6 +183,9 @@ La dirección de la API se configura en la constante `API_URL` al inicio de `fro
 | POST | `/api/estudiantes` | Registra estudiante e inscripciones (transacción) | 201, 400, 409, 500 |
 | PUT | `/api/estudiantes/:id` | Actualiza estudiante y reemplaza inscripciones (transacción) | 200, 400, 404, 409, 500 |
 | DELETE | `/api/estudiantes/:id` | Elimina estudiante; sus inscripciones se borran en cascada | 200, 400, 404, 500 |
+| GET | `/api/estudiantes/:id/cursos` | Cursos inscritos del estudiante, ordenados por nombre | 200, 400, 404, 500 |
+| POST | `/api/estudiantes/:id/cursos` | Inscribe un curso `{ "cursoId": n }` (también acepta `curso_id`); devuelve el curso | 201, 400, 404, 409, 500 |
+| DELETE | `/api/estudiantes/:id/cursos/:cursoId` | Quita la inscripción (sin cuerpo en la respuesta) | 204, 400, 404, 500 |
 
 Cuerpo de POST y PUT de estudiantes:
 
@@ -189,7 +201,24 @@ Cuerpo de POST y PUT de estudiantes:
 }
 ```
 
-`fecha_nacimiento` es opcional. `cursos` debe tener al menos un id, sin repetidos, y todos deben pertenecer a `carrera_id`. Las respuestas de estudiantes incluyen `carrera_id`, `carrera_nombre` y `cursos: [{ id, nombre, codigo, creditos }]` ordenados por nombre.
+`fecha_nacimiento` y `cursos` son opcionales. Si se envía `cursos`, debe ser un arreglo (puede estar vacío) sin repetidos, y todos deben pertenecer a `carrera_id`. Las respuestas de estudiantes incluyen `carrera_id`, `carrera_nombre` y `cursos: [{ id, nombre, codigo, creditos }]` ordenados por nombre.
+
+**Inscripciones en POST y PUT:**
+
+- **POST:** si trae `cursos`, inscribe esos cursos; si no, el estudiante queda sin inscripciones.
+- **PUT con `cursos`** (aunque sea `[]`): reemplaza todas las inscripciones.
+- **PUT sin `cursos`:** no toca las inscripciones. Así se editan los datos personales sin reenviar los cursos.
+- **Cambio de carrera:** si el PUT cambia `carrera_id`, no trae `cursos` y el estudiante tiene inscripciones, la API responde **409** y no cambia nada. Para cambiar de carrera hay que enviar `cursos` con cursos de la nueva carrera, o `[]` para quitar todas las inscripciones en la misma transacción. El frontend pide confirmación y envía `cursos: []`.
+
+**Validaciones de `POST /api/estudiantes/:id/cursos`:**
+
+| Código | Caso |
+|---|---|
+| 404 | El estudiante o el curso no existen |
+| 400 | El curso no pertenece a la carrera del estudiante, o `cursoId` es inválido |
+| 409 | El estudiante ya está inscrito en ese curso |
+
+`DELETE /api/estudiantes/:id/cursos/:cursoId` responde 404 si el estudiante no existe o si no está inscrito en ese curso.
 
 Los errores responden `{ "error": "mensaje en español" }`; la validación (400) incluye además `detalles` con mensajes legibles.
 
