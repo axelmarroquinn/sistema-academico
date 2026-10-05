@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sistema Académico: registro, consulta, edición y eliminación de estudiantes y sus cursos.">
+  <title>Sistema Académico | Gestión de Estudiantes y Cursos</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__contenido">
+      <div>
+        <h1 class="encabezado__titulo">Sistema Académico</h1>
+        <p class="encabezado__subtitulo">Gestión de estudiantes y cursos</p>
+      </div>
+      <nav aria-label="Navegación principal">
+        <ul class="menu">
+          <li><a href="#seccion-formulario">Registrar</a></li>
+          <li><a href="#seccion-listado">Estudiantes</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Región de mensajes: los lectores de pantalla anuncian su contenido al cambiar -->
+  <div id="mensajes" class="mensajes" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <main id="contenido" class="contenedor principal">
+    <section id="seccion-formulario" class="tarjeta" aria-labelledby="titulo-formulario">
+      <h2 id="titulo-formulario" class="tarjeta__titulo">Registrar estudiante</h2>
+
+      <form id="formulario" novalidate>
+        <div class="campos">
+          <div class="campo">
+            <label for="nombres">Nombres <span class="obligatorio" aria-hidden="true">*</span></label>
+            <input id="nombres" name="nombres" type="text" maxlength="100" autocomplete="given-name" required aria-describedby="error-nombres">
+            <p id="error-nombres" class="campo__error"></p>
+          </div>
+
+          <div class="campo">
+            <label for="apellidos">Apellidos <span class="obligatorio" aria-hidden="true">*</span></label>
+            <input id="apellidos" name="apellidos" type="text" maxlength="100" autocomplete="family-name" required aria-describedby="error-apellidos">
+            <p id="error-apellidos" class="campo__error"></p>
+          </div>
+
+          <div class="campo">
+            <label for="correo">Correo <span class="obligatorio" aria-hidden="true">*</span></label>
+            <input id="correo" name="correo" type="email" maxlength="254" autocomplete="email" required aria-describedby="error-correo">
+            <p id="error-correo" class="campo__error"></p>
+          </div>
+
+          <div class="campo">
+            <label for="carnet">Carnet <span class="obligatorio" aria-hidden="true">*</span></label>
+            <input id="carnet" name="carnet" type="text" maxlength="30" required aria-describedby="error-carnet">
+            <p id="error-carnet" class="campo__error"></p>
+          </div>
+
+          <div class="campo">
+            <label for="fecha_nacimiento">Fecha de nacimiento <span class="opcional">(opcional)</span></label>
+            <input id="fecha_nacimiento" name="fecha_nacimiento" type="date" aria-describedby="error-fecha_nacimiento">
+            <p id="error-fecha_nacimiento" class="campo__error"></p>
+          </div>
+
+          <div class="campo">
+            <label for="curso_id">Curso <span class="obligatorio" aria-hidden="true">*</span></label>
+            <select id="curso_id" name="curso_id" required aria-describedby="error-curso_id">
+              <option value="">Cargando cursos…</option>
+            </select>
+            <p id="error-curso_id" class="campo__error"></p>
+          </div>
+        </div>
+
+        <p class="nota"><span aria-hidden="true">*</span> Campo obligatorio.</p>
+
+        <div class="acciones">
+          <button id="boton-guardar" type="submit" class="boton boton--primario">Guardar</button>
+          <button id="boton-cancelar" type="button" class="boton boton--secundario">Cancelar</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="seccion-listado" class="tarjeta" aria-labelledby="titulo-listado">
+      <div class="tarjeta__cabecera">
+        <h2 id="titulo-listado" class="tarjeta__titulo">Estudiantes registrados</h2>
+        <button id="boton-recargar" type="button" class="boton boton--secundario boton--pequeno">Recargar</button>
+      </div>
+
+      <!-- La tabla puede desplazarse horizontalmente en pantallas pequeñas -->
+      <div class="tabla-contenedor" tabindex="0" role="region" aria-label="Tabla de estudiantes, desplazable horizontalmente">
+        <table class="tabla">
+          <caption>Listado de estudiantes con su curso y carrera</caption>
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Nombres</th>
+              <th scope="col">Apellidos</th>
+              <th scope="col">Correo</th>
+              <th scope="col">Carnet</th>
+              <th scope="col">Nacimiento</th>
+              <th scope="col">Curso</th>
+              <th scope="col">Carrera</th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-tabla"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <p>Proyecto final de Desarrollo Web · Universidad Mariano Gálvez de Guatemala</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

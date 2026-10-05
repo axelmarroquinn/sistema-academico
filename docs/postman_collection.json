@@ -1,0 +1,502 @@
+{
+  "info": {
+    "_postman_id": "3c452c62-d13c-47d2-9240-5eb64cb62563",
+    "name": "Sistema Académico API",
+    "description": "Carreras, cursos, estudiantes con inscripciones y salud del servidor. Usa los IDs fijos de database/database.sql (carrera 1 = Sistemas con cursos 1-4; carrera 2 = Administración con cursos 5-8). Las peticiones \"Crear\" guardan el id creado en una variable que usan \"Actualizar\" y \"Eliminar\". Ejecute las carpetas en orden.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "estudianteId",
+      "value": "1"
+    },
+    {
+      "key": "carreraNuevaId",
+      "value": ""
+    },
+    {
+      "key": "cursoNuevoId",
+      "value": ""
+    },
+    {
+      "key": "estudianteNuevoId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Salud",
+      "item": [
+        {
+          "name": "Estado API y conexión MySQL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Carreras",
+      "item": [
+        {
+          "name": "Listar carreras",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/carreras"
+          }
+        },
+        {
+          "name": "Crear carrera (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/carreras",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carrera Postman {{$timestamp}}\",\n  \"codigo\": \"PM{{$timestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('carreraNuevaId', pm.response.json().id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear carrera duplicada (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/carreras",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ingeniería en Sistemas\",\n  \"codigo\": \"IS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear carrera inválida (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/carreras",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\",\n  \"codigo\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Eliminar carrera con cursos y estudiantes (409)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/carreras/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cursos",
+      "item": [
+        {
+          "name": "Listar cursos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/cursos"
+          }
+        },
+        {
+          "name": "Filtrar cursos por carrera",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/cursos?carrera_id=1"
+          }
+        },
+        {
+          "name": "Filtro con carrera_id inválido (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/cursos?carrera_id=abc"
+          }
+        },
+        {
+          "name": "Crear curso en la carrera nueva (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/cursos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carrera_id\": \"{{carreraNuevaId}}\",\n  \"nombre\": \"Curso Postman\",\n  \"codigo\": \"CP{{$timestamp}}\",\n  \"creditos\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('cursoNuevoId', pm.response.json().id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear curso con carrera inexistente (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/cursos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carrera_id\": 999999,\n  \"nombre\": \"Curso Huérfano\",\n  \"codigo\": \"X-{{$timestamp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear curso con código duplicado (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/cursos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carrera_id\": 1,\n  \"nombre\": \"Otro nombre\",\n  \"codigo\": \"IS-DW101\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Eliminar curso con inscritos (409)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/cursos/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Estudiantes",
+      "item": [
+        {
+          "name": "Listar estudiantes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/estudiantes"
+          }
+        },
+        {
+          "name": "Obtener estudiante",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteId}}"
+          }
+        },
+        {
+          "name": "Obtener estudiante inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/estudiantes/999999"
+          }
+        },
+        {
+          "name": "Crear estudiante con 2 cursos (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"María Fernanda\",\n  \"apellidos\": \"Gómez López\",\n  \"correo\": \"maria.{{$timestamp}}@example.com\",\n  \"carnet\": \"PM-{{$timestamp}}\",\n  \"fecha_nacimiento\": \"2004-05-20\",\n  \"carrera_id\": 1,\n  \"cursos\": [\n    1,\n    2\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('estudianteNuevoId', pm.response.json().id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear con curso de otra carrera (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"María Fernanda\",\n  \"apellidos\": \"Gómez López\",\n  \"correo\": \"maria.{{$timestamp}}@example.com\",\n  \"carnet\": \"PM-{{$timestamp}}\",\n  \"fecha_nacimiento\": \"2004-05-20\",\n  \"carrera_id\": 1,\n  \"cursos\": [\n    1,\n    5\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear con cursos vacíos (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"María Fernanda\",\n  \"apellidos\": \"Gómez López\",\n  \"correo\": \"maria.{{$timestamp}}@example.com\",\n  \"carnet\": \"PM-{{$timestamp}}\",\n  \"fecha_nacimiento\": \"2004-05-20\",\n  \"carrera_id\": 1,\n  \"cursos\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear con cursos repetidos (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"María Fernanda\",\n  \"apellidos\": \"Gómez López\",\n  \"correo\": \"maria.{{$timestamp}}@example.com\",\n  \"carnet\": \"PM-{{$timestamp}}\",\n  \"fecha_nacimiento\": \"2004-05-20\",\n  \"carrera_id\": 1,\n  \"cursos\": [\n    1,\n    1\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear inválido (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"\",\n  \"apellidos\": \"\",\n  \"correo\": \"correo-invalido\",\n  \"carnet\": \"\",\n  \"carrera_id\": 0,\n  \"cursos\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear con correo duplicado (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"María Fernanda\",\n  \"apellidos\": \"Gómez López\",\n  \"correo\": \"ana.lopez@example.com\",\n  \"carnet\": \"PM-{{$timestamp}}\",\n  \"fecha_nacimiento\": \"2004-05-20\",\n  \"carrera_id\": 1,\n  \"cursos\": [\n    1,\n    2\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Actualizar: reemplazar cursos (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteNuevoId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"María Fernanda\",\n  \"apellidos\": \"Gómez Pérez\",\n  \"correo\": \"maria.editada.{{$timestamp}}@example.com\",\n  \"carnet\": \"PM-E-{{$timestamp}}\",\n  \"fecha_nacimiento\": \"2004-05-20\",\n  \"carrera_id\": 1,\n  \"cursos\": [\n    3,\n    4\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Actualizar: cambiar de carrera con cursos de la anterior (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteNuevoId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"María Fernanda\",\n  \"apellidos\": \"Gómez Pérez\",\n  \"correo\": \"maria.otra.{{$timestamp}}@example.com\",\n  \"carnet\": \"PM-O-{{$timestamp}}\",\n  \"carrera_id\": 2,\n  \"cursos\": [\n    3,\n    4\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Eliminar estudiante creado (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteNuevoId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Limpieza",
+      "item": [
+        {
+          "name": "Eliminar curso creado (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/cursos/{{cursoNuevoId}}"
+          }
+        },
+        {
+          "name": "Eliminar carrera creada (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/carreras/{{carreraNuevaId}}"
+          }
+        }
+      ]
+    }
+  ]
+}

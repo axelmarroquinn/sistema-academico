@@ -13,6 +13,7 @@ const pool = mysql.createPool({
   queueLimit: 0,
   charset: 'utf8mb4',
   timezone: 'Z',
+  dateStrings: ['DATE'],
 });
 
 module.exports = pool;

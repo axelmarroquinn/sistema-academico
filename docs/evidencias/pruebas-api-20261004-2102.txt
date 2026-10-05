@@ -1,0 +1,159 @@
+﻿**********************
+Inicio de la transcripción de Windows PowerShell
+Hora de inicio: 20261004210244
+Nombre de usuario: AMCOMPUTER\axelm
+Usuario RunAs: AMCOMPUTER\axelm
+Nombre de la configuración: 
+Máquina: AMCOMPUTER (Microsoft Windows NT 10.0.26200.0)
+Aplicación host: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\docs\probar-api.ps1
+Id. de proceso: 16220
+PSVersion: 5.1.26100.9444
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9444
+BuildVersion: 10.0.26100.9444
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+=== Estado de API y MySQL (GET /api/health) ===
+Codigo HTTP: 200
+{"status":"ok","database":"connected"}
+Esperado: 200 | Obtenido: 200 | OK
+
+=== Listar estudiantes (GET /api/estudiantes) ===
+Codigo HTTP: 200
+[{"id":1,"nombres":"Lucía","apellidos":"Pérez Soto","correo":"lucia.perez@example.com","carnet":"2026-AE-001","fecha_nacimiento":"2005-07-21","curso_id":1,"curso_nombre":"Contabilidad General","curso_codigo":"AE-CG101","carrera_nombre":"Administración de Empresas"},{"id":2,"nombres":"Carlos","apellidos":"Méndez Ruiz","correo":"carlos.mendez@example.com","carnet":"2026-IS-002","fecha_nacimiento":"2003-11-02","curso_id":3,"curso_nombre":"Bases de Datos","curso_codigo":"IS-BD102","carrera_nombre":"Ingeniería en Sistemas"},{"id":3,"nombres":"Ana María","apellidos":"López García","correo":"ana.lopez@example.com","carnet":"2026-IS-001","fecha_nacimiento":"2004-03-15","curso_id":2,"curso_nombre":"Desarrollo Web","curso_codigo":"IS-DW101","carrera_nombre":"Ingeniería en Sistemas"}]
+Esperado: 200 | Obtenido: 200 | OK
+
+=== Listar cursos (GET /api/cursos) ===
+Codigo HTTP: 200
+[{"id":3,"nombre":"Bases de Datos","codigo":"IS-BD102","carrera_nombre":"Ingeniería en Sistemas"},{"id":1,"nombre":"Contabilidad General","codigo":"AE-CG101","carrera_nombre":"Administración de Empresas"},{"id":2,"nombre":"Desarrollo Web","codigo":"IS-DW101","carrera_nombre":"Ingeniería en Sistemas"},{"id":4,"nombre":"Psicología General","codigo":"PS-PG101","carrera_nombre":"Psicología"}]
+Esperado: 200 | Obtenido: 200 | OK
+
+=== Crear estudiante (POST /api/estudiantes) ===
+Codigo HTTP: 201
+{"id":6,"nombres":"Maria Fernanda","apellidos":"Gomez Lopez","correo":"maria.20261004210244@example.com","carnet":"POST-20261004210244","fecha_nacimiento":"2004-05-20","curso_id":1,"curso_nombre":"Contabilidad General","curso_codigo":"AE-CG101","carrera_nombre":"Administración de Empresas"}
+Esperado: 201 | Obtenido: 201 | OK
+
+=== Obtener el estudiante creado (GET /api/estudiantes/6) ===
+Codigo HTTP: 200
+{"id":6,"nombres":"Maria Fernanda","apellidos":"Gomez Lopez","correo":"maria.20261004210244@example.com","carnet":"POST-20261004210244","fecha_nacimiento":"2004-05-20","curso_id":1,"curso_nombre":"Contabilidad General","curso_codigo":"AE-CG101","carrera_nombre":"Administración de Empresas"}
+Esperado: 200 | Obtenido: 200 | OK
+
+=== Actualizar estudiante (PUT /api/estudiantes/6) ===
+Codigo HTTP: 200
+{"id":6,"nombres":"Maria Fernanda","apellidos":"Gomez Perez","correo":"maria.20261004210244@example.com","carnet":"POST-20261004210244","fecha_nacimiento":"2004-05-20","curso_id":1,"curso_nombre":"Contabilidad General","curso_codigo":"AE-CG101","carrera_nombre":"Administración de Empresas"}
+Esperado: 200 | Obtenido: 200 | OK
+
+=== Eliminar estudiante (DELETE /api/estudiantes/6) ===
+Codigo HTTP: 200
+{"mensaje":"Estudiante eliminado correctamente."}
+Esperado: 200 | Obtenido: 200 | OK
+
+=== Obtener el estudiante eliminado (GET /api/estudiantes/6) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Estudiante no encontrado."}"
+Codigo HTTP: 404
+{"error":"Estudiante no encontrado."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== Estudiante inexistente (GET /api/estudiantes/999999) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Estudiante no encontrado."}"
+Codigo HTTP: 404
+{"error":"Estudiante no encontrado."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== Datos invalidos (POST /api/estudiantes) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["nombres es obligatorio y debe ser texto.","apellidos es obligatorio y debe ser texto.","carnet es obligatorio y debe ser texto.","correo debe tener un formato válido.","curso_id es obligatorio y debe ser un entero positivo."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["nombres es obligatorio y debe ser texto.","apellidos es obligatorio y debe ser texto.","carnet es obligatorio y debe ser texto.","correo debe tener un formato válido.","curso_id es obligatorio y debe ser un entero positivo."]}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== Correo duplicado (POST) (POST /api/estudiantes) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"El correo o carnet ya está registrado."}"
+Codigo HTTP: 409
+{"error":"El correo o carnet ya está registrado."}
+Esperado: 409 | Obtenido: 409 | OK
+
+=== PUT a estudiante inexistente (PUT /api/estudiantes/999999) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Estudiante no encontrado."}"
+Codigo HTTP: 404
+{"error":"Estudiante no encontrado."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== DELETE a estudiante inexistente (DELETE /api/estudiantes/999999) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Estudiante no encontrado."}"
+Codigo HTTP: 404
+{"error":"Estudiante no encontrado."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== GET con ID no numerico (GET /api/estudiantes/abc) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"El id debe ser un entero positivo."}"
+Codigo HTTP: 400
+{"error":"El id debe ser un entero positivo."}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== POST con curso_id inexistente (POST /api/estudiantes) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["El curso indicado no existe."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["El curso indicado no existe."]}
+Esperado: 400 | Obtenido: 400 | OK
+
+ID del estudiante temporal (temporal.20261004210244@example.com): 8
+ID del estudiante existente (ana.lopez@example.com): 3
+
+=== PUT con correo de otro estudiante (PUT /api/estudiantes/8) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"El correo o carnet ya está registrado."}"
+Codigo HTTP: 409
+{"error":"El correo o carnet ya está registrado."}
+Esperado: 409 | Obtenido: 409 | OK
+Limpieza: estudiante temporal 8 eliminado.
+
+=== POST con JSON malformado (POST /api/estudiantes) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"El cuerpo de la solicitud debe contener JSON válido."}"
+Codigo HTTP: 400
+{"error":"El cuerpo de la solicitud debe contener JSON válido."}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== POST con fecha_nacimiento futura (POST /api/estudiantes) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Hay datos inválidos.","detalles":["fecha_nacimiento no puede ser futura."]}"
+Codigo HTTP: 400
+{"error":"Hay datos inválidos.","detalles":["fecha_nacimiento no puede ser futura."]}
+Esperado: 400 | Obtenido: 400 | OK
+
+=== Ruta desconocida (GET /api/xyz) ===
+PS>ErrorTerminación(Invoke-WebRequest): "{"error":"Ruta no encontrada."}"
+Codigo HTTP: 404
+{"error":"Ruta no encontrada."}
+Esperado: 404 | Obtenido: 404 | OK
+
+=== RESUMEN ===
+
+Prueba                            Esperado Obtenido Resultado
+------                            -------- -------- ---------
+Estado de API y MySQL                  200      200 OK       
+Listar estudiantes                     200      200 OK       
+Listar cursos                          200      200 OK       
+Crear estudiante                       201      201 OK       
+Obtener el estudiante creado           200      200 OK       
+Actualizar estudiante                  200      200 OK       
+Eliminar estudiante                    200      200 OK       
+Obtener el estudiante eliminado        404      404 OK       
+Estudiante inexistente                 404      404 OK       
+Datos invalidos                        400      400 OK       
+Correo duplicado (POST)                409      409 OK       
+PUT a estudiante inexistente           404      404 OK       
+DELETE a estudiante inexistente        404      404 OK       
+GET con ID no numerico                 400      400 OK       
+POST con curso_id inexistente          400      400 OK       
+PUT con correo de otro estudiante      409      409 OK       
+POST con JSON malformado               400      400 OK       
+POST con fecha_nacimiento futura       400      400 OK       
+Ruta desconocida                       404      404 OK
+Pruebas aprobadas: 19 de 19
+Evidencia guardada en: C:\Users\axelm\Coding\Proyectos\sistema-academico\docs\evidencias\pruebas-api-20261004-2102.txt
+**********************
+Fin de la transcripción de Windows PowerShell
+Hora de finalización: 20261004210245
+**********************
