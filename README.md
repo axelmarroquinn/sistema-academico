@@ -1,8 +1,13 @@
 # Sistema Académico de Gestión de Estudiantes y Cursos
 
 **Curso:** Desarrollo Web, Universidad Mariano Gálvez de Guatemala (UMG)  
-**Integrantes:** [Nombre del integrante 1], [Nombre del integrante 2], [Nombre del integrante 3]
 
+## 👥 Integrantes del Equipo
+
+| Nombre Completo | Carnet | Rol / Aporte Principal |
+| :--- | :--- | :--- |
+| **Jonathan David Hernández Gamas** | 0900-23-12489 | Pruebas de API (Postman / HTTP 500), validación Frontend y documentación |
+| **Axel Iván Marroquín** | 0900-23-1649 | Arquitectura Backend, Base de Datos y estructura inicial |
 ## Descripción
 
 Aplicación web académica para consultar y administrar estudiantes y sus cursos. Separa interfaz, API y persistencia en MySQL.
