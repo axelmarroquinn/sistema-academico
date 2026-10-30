@@ -64,3 +64,51 @@ function iniciar() {
 }
 
 iniciar();
+
+/* LÓGICA DEL PANEL LATERAL IZQUIERDO Y MODO OSCURO */
+
+(() => {
+    const btnAbrir = document.getElementById('btn-abrir-sidebar');
+    const btnCerrar = document.getElementById('btn-cerrar-sidebar');
+    const sidebar = document.getElementById('sidebar-panel');
+    const overlay = document.getElementById('sidebar-overlay');
+    const toggleDark = document.getElementById('toggle-dark-mode');
+    const themeLabel = document.getElementById('theme-label-text');
+
+    const abrirSidebar = () => {
+        sidebar?.classList.add('activo');
+        overlay?.classList.add('activo');
+    };
+
+    const cerrarSidebar = () => {
+        sidebar?.classList.remove('activo');
+        overlay?.classList.remove('activo');
+    };
+
+    btnAbrir?.addEventListener('click', abrirSidebar);
+    btnCerrar?.addEventListener('click', cerrarSidebar);
+    overlay?.addEventListener('click', cerrarSidebar);
+
+    // Cerrar con tecla Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') cerrarSidebar();
+    });
+
+    // Aplicar y guardar preferencia de Modo Oscuro en localStorage
+    const aplicarTema = (esOscuro) => {
+        document.body.classList.toggle('dark-mode', esOscuro);
+        if (toggleDark) toggleDark.checked = esOscuro;
+        if (themeLabel) {
+            themeLabel.textContent = esOscuro ? '☀️ Modo Oscuro (Activo)' : '🌙 Modo Oscuro';
+        }
+        localStorage.setItem('umg_tema_oscuro', esOscuro ? '1' : '0');
+    };
+
+    // Restaurar al cargar la página
+    const guardado = localStorage.getItem('umg_tema_oscuro') === '1';
+    aplicarTema(guardado);
+
+    toggleDark?.addEventListener('change', (e) => {
+        aplicarTema(e.target.checked);
+    });
+})();

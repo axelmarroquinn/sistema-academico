@@ -554,6 +554,199 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* =========================================================
+   BOTÓN HAMBURGUESA (3 LÍNEAS) Y PANEL LATERAL IZQUIERDO
+   ========================================================= */
+header .header-inner,
+header > div {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.hamburger-btn {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    margin-right: 0.75rem;
+    transition: background 0.2s ease, transform 0.15s ease;
+    flex-shrink: 0;
+}
+
+.hamburger-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.04);
+}
+
+.hamburger-btn span {
+    display: block;
+    width: 20px;
+    height: 2.5px;
+    background-color: #ffffff;
+    border-radius: 2px;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.6);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+    z-index: 9998;
+}
+
+.sidebar-overlay.activo {
+    opacity: 1;
+    visibility: visible;
+}
+
+.sidebar-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 320px;
+    max-width: 85vw;
+    height: 100vh;
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-panel.activo {
+    transform: translateX(0);
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.15rem 1.25rem;
+    background: #1d4ed8;
+    color: #ffffff;
+}
+
+.sidebar-header h2 {
+    font-size: 1.05rem;
+    margin: 0;
+    color: #ffffff !important;
+}
+
+.sidebar-close-btn {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 1.75rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0.25rem;
+}
+
+.sidebar-body {
+    padding: 1.25rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.sidebar-section {
+    padding-bottom: 1.1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.sidebar-section:last-child {
+    border-bottom: none;
+}
+
+.sidebar-section h3 {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #2563eb;
+    margin-bottom: 0.55rem;
+}
+
+.sidebar-section p {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: #334155;
+    margin: 0;
+}
+
+.sidebar-team {
+    list-style: none;
+    padding: 0;
+    margin: 0.65rem 0 0 0;
+    font-size: 0.88rem;
+    color: #1e293b;
+}
+
+.sidebar-team li {
+    padding: 0.25rem 0;
+    font-weight: 500;
+}
+
+/* Interruptor (Switch) de Modo Oscuro */
+.theme-switch-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.5rem 0.75rem;
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+
+.theme-switch-wrapper input {
+    display: none;
+}
+
+.theme-slider {
+    position: relative;
+    width: 46px;
+    height: 24px;
+    background-color: #cbd5e1;
+    border-radius: 24px;
+    transition: background-color 0.25s ease;
+}
+
+.theme-slider::before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.25s ease;
+}
+
+.theme-switch-wrapper input:checked + .theme-slider {
+    background-color: #3b82f6;
+}
+
+.theme-switch-wrapper input:checked + .theme-slider::before {
+    transform: translateX(22px);
+}
+
 .panel__subtitulo {
   margin: 0 0 0.5rem;
   font-size: 1.05rem;
@@ -640,4 +833,171 @@ body {
     right: 1rem;
     max-width: none;
   }
+}
+
+/* ===== MODO OSCURO PARA TODA LA PÁGINA ===== */
+/* =========================================================
+   MODO OSCURO COMPLETO (ALTO CONTRASTE EN TODA LA PÁGINA)
+   ========================================================= */
+html:has(body.dark-mode),
+body.dark-mode {
+    --bg: #0b1120 !important;
+    --bg-page: #0b1120 !important;
+    --bg-card: #1e293b !important;
+    --surface: #1e293b !important;
+    --card: #1e293b !important;
+    --card-bg: #1e293b !important;
+    --white: #1e293b !important;
+    --text: #f8fafc !important;
+    --text-main: #f8fafc !important;
+    --text-muted: #cbd5e1 !important;
+    --muted: #cbd5e1 !important;
+    --border: #334155 !important;
+    background-color: #0b1120 !important;
+    color: #f8fafc !important;
+}
+
+/* Header superior en modo oscuro */
+body.dark-mode header {
+    background: linear-gradient(90deg, #0f172a 0%, #1e3a8a 100%) !important;
+    border-bottom: 1px solid #334155 !important;
+}
+
+/* TODAS las tarjetas y contenedores principales (quita el fondo blanco) */
+body.dark-mode main section,
+body.dark-mode main article,
+body.dark-mode main form,
+body.dark-mode .card,
+body.dark-mode .panel,
+body.dark-mode .box,
+body.dark-mode .form-card,
+body.dark-mode .section-card,
+body.dark-mode [class*="card"],
+body.dark-mode [class*="panel"],
+body.dark-mode [class*="box"],
+body.dark-mode [class*="container"]:not(header *):not(main) {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+
+/* Si las tarjetas son divs hijos directos dentro de las secciones o grillas */
+body.dark-mode main > section > div,
+body.dark-mode main > section > div > div,
+body.dark-mode main > div > section,
+body.dark-mode fieldset {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+
+/* Evitar que las grillas invisibles tengan fondo sólido si no tienen borde ni padding */
+body.dark-mode .grid,
+body.dark-mode .row,
+body.dark-mode .form-grid,
+body.dark-mode .form-row,
+body.dark-mode .field,
+body.dark-mode .form-group {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Títulos, labels y textos siempre claros y legibles */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode label,
+body.dark-mode legend,
+body.dark-mode strong,
+body.dark-mode span:not(.theme-slider),
+body.dark-mode th,
+body.dark-mode td,
+body.dark-mode li {
+    color: #f8fafc !important;
+}
+
+body.dark-mode p,
+body.dark-mode small,
+body.dark-mode .hint,
+body.dark-mode .subtitle,
+body.dark-mode .muted {
+    color: #cbd5e1 !important;
+}
+
+/* Asteriscos de campos obligatorios en rojo brillante */
+body.dark-mode label span,
+body.dark-mode .required {
+    color: #f87171 !important;
+}
+
+/* Cajas de texto (Inputs, Selects, Textareas) */
+body.dark-mode input:not([type="checkbox"]):not([type="radio"]),
+body.dark-mode select,
+body.dark-mode textarea {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border: 1px solid #475569 !important;
+    color-scheme: dark;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+    color: #94a3b8 !important;
+}
+
+/* Tablas y encabezados de tabla */
+body.dark-mode table {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+
+body.dark-mode thead,
+body.dark-mode thead tr,
+body.dark-mode th {
+    background-color: #090d16 !important;
+    color: #93c5fd !important;
+    border-color: #334155 !important;
+}
+
+body.dark-mode tbody tr,
+body.dark-mode td {
+    background-color: #111827 !important;
+    border-color: #1e293b !important;
+}
+
+body.dark-mode tbody tr:hover td {
+    background-color: #1e293b !important;
+}
+
+/* Pestañas del header (Estudiantes / Carreras y cursos) */
+body.dark-mode header nav a,
+body.dark-mode header nav button {
+    color: #f8fafc !important;
+}
+
+/* Panel lateral en Modo Oscuro */
+body.dark-mode .sidebar-panel {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border-right: 1px solid #334155 !important;
+}
+
+body.dark-mode .sidebar-header {
+    background-color: #1e293b !important;
+    border-bottom: 1px solid #334155 !important;
+}
+
+body.dark-mode .sidebar-section {
+    border-bottom-color: #1e293b !important;
+}
+
+body.dark-mode .sidebar-section h3 {
+    color: #60a5fa !important;
+}
+
+body.dark-mode .theme-switch-wrapper {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
 }

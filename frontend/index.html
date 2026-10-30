@@ -15,6 +15,11 @@
   <header class="encabezado">
     <div class="contenedor encabezado__contenido">
       <div>
+        <button id="btn-abrir-sidebar" class="hamburger-btn" type="button" aria-label="Abrir menú lateral" title="Menú">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
         <h1 class="encabezado__titulo">Sistema Académico</h1>
         <p class="encabezado__subtitulo">Gestión de estudiantes, carreras y cursos</p>
       </div>
@@ -256,5 +261,47 @@
       <p>Proyecto final de Desarrollo Web · Universidad Mariano Gálvez de Guatemala</p>
     </div>
   </footer>
+  <!-- Fondo oscuro semitransparente al abrir el panel -->
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+<!-- Panel Lateral Izquierdo Desplegable -->
+<aside id="sidebar-panel" class="sidebar-panel" aria-label="Panel de información y ajustes">
+    <div class="sidebar-header">
+        <h2>Menú del Sistema</h2>
+        <button id="btn-cerrar-sidebar" class="sidebar-close-btn" type="button" aria-label="Cerrar menú">&times;</button>
+    </div>
+
+    <div class="sidebar-body">
+        <!-- 1. Opción de Modo Oscuro -->
+        <div class="sidebar-section">
+            <h3>Apariencia</h3>
+            <label class="theme-switch-wrapper" for="toggle-dark-mode">
+                <span id="theme-label-text">🌙 Modo Oscuro</span>
+                <input type="checkbox" id="toggle-dark-mode">
+                <span class="theme-slider"></span>
+            </label>
+        </div>
+
+        <!-- 2. Breve descripción del sistema -->
+        <div class="sidebar-section">
+            <h3>Sobre el Sistema</h3>
+            <p>
+                Plataforma web Full Stack para el control académico universitario. Permite gestionar estudiantes, carreras e inscripciones de cursos con persistencia en MySQL.
+            </p>
+        </div>
+
+        <!-- 3. Sección Quiénes somos -->
+        <div class="sidebar-section">
+            <h3>Quiénes Somos</h3>
+            <p>
+                Proyecto desarrollado para el curso de <strong>Desarrollo Web</strong> de la Facultad de Ingeniería en Sistemas de la <strong>Universidad Mariano Gálvez de Guatemala (UMG)</strong>.
+            </p>
+            <ul class="sidebar-team">
+                <li>👨‍💻 Jonathan David Hernández Gamas</li>
+                <li>👨‍💻 Axel Iván Salvatierra Marroquín</li>
+            </ul>
+        </div>
+    </div>
+</aside>
 </body>
 </html>
