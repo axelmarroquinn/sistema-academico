@@ -20,7 +20,7 @@ Centraliza el registro de carreras, cursos y estudiantes con sus inscripciones, 
 
 - Frontend: HTML5, CSS3 y JavaScript Vanilla, sin frameworks ni paso de compilación.
 - Backend: Node.js y Express 4.
-- Base de datos: MySQL 8 o MariaDB compatible.
+- Base de datos: MySQL 8
 - Conexión y configuración: `mysql2/promise`, `dotenv` y CORS.
 
 ## Arquitectura
