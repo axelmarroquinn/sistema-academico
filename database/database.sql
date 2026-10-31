@@ -7,7 +7,7 @@
 -- Modelo:
 --   carreras 1 ── N cursos        (cada curso pertenece a una carrera)
 --   carreras 1 ── N estudiantes   (cada estudiante pertenece a una carrera)
---   estudiantes N ── N cursos     (tabla intermedia inscripciones)
+--   estudiantes N ── N cursos     (tabla intermedia inscripciones con estado ACTIVO/INACTIVO)
 -- La regla "un estudiante solo se inscribe en cursos de su carrera" la valida la API.
 
 CREATE DATABASE IF NOT EXISTS sistema_academico
@@ -54,12 +54,14 @@ CREATE TABLE estudiantes (
   correo VARCHAR(254) NOT NULL,
   carnet VARCHAR(30) NOT NULL,
   fecha_nacimiento DATE NULL,
+  estado ENUM('ACTIVO', 'INACTIVO') NOT NULL DEFAULT 'ACTIVO',
   creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_estudiantes_correo (correo),
   UNIQUE KEY uq_estudiantes_carnet (carnet),
   KEY idx_estudiantes_carrera_id (carrera_id),
+  KEY idx_estudiantes_estado (estado),
   CONSTRAINT fk_estudiantes_carreras FOREIGN KEY (carrera_id)
     REFERENCES carreras (id)
     ON UPDATE CASCADE
@@ -67,19 +69,20 @@ CREATE TABLE estudiantes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Tabla intermedia de la relación muchos a muchos entre estudiantes y cursos.
--- La clave primaria compuesta impide inscribir dos veces al mismo estudiante en el mismo curso.
+-- Conserva historial mediante la columna estado ('ACTIVO' / 'INACTIVO').
 CREATE TABLE inscripciones (
   estudiante_id INT UNSIGNED NOT NULL,
   curso_id INT UNSIGNED NOT NULL,
+  estado ENUM('ACTIVO', 'INACTIVO') NOT NULL DEFAULT 'ACTIVO',
   creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (estudiante_id, curso_id),
   KEY idx_inscripciones_curso_id (curso_id),
-  -- Al borrar un estudiante se borran sus inscripciones.
+  KEY idx_inscripciones_estado (estado),
   CONSTRAINT fk_inscripciones_estudiantes FOREIGN KEY (estudiante_id)
     REFERENCES estudiantes (id)
     ON UPDATE CASCADE
     ON DELETE CASCADE,
-  -- No se puede borrar un curso que tenga estudiantes inscritos.
   CONSTRAINT fk_inscripciones_cursos FOREIGN KEY (curso_id)
     REFERENCES cursos (id)
     ON UPDATE CASCADE
@@ -108,19 +111,19 @@ INSERT INTO cursos (id, carrera_id, nombre, codigo, creditos) VALUES
   (11, 3, 'Estadística Aplicada', 'PS-EA201', 4),
   (12, 3, 'Neurociencias', 'PS-NC201', 4);
 
-INSERT INTO estudiantes (id, carrera_id, nombres, apellidos, correo, carnet, fecha_nacimiento) VALUES
-  (1, 1, 'Ana María', 'López García', 'ana.lopez@example.com', '2026-IS-001', '2004-03-15'),
-  (2, 1, 'Carlos', 'Méndez Ruiz', 'carlos.mendez@example.com', '2026-IS-002', '2003-11-02'),
-  (3, 2, 'Lucía', 'Pérez Soto', 'lucia.perez@example.com', '2026-AE-001', '2005-07-21'),
-  (4, 2, 'José', 'Ramírez Castillo', 'jose.ramirez@example.com', '2026-AE-002', '2004-09-10'),
-  (5, 3, 'Sofía', 'Hernández Morales', 'sofia.hernandez@example.com', '2026-PS-001', '2005-01-30'),
-  (6, 3, 'Diego', 'Juárez Pineda', 'diego.juarez@example.com', '2026-PS-002', NULL);
+INSERT INTO estudiantes (id, carrera_id, nombres, apellidos, correo, carnet, fecha_nacimiento, estado) VALUES
+  (1, 1, 'Ana María', 'López García', 'ana.lopez@example.com', '2026-IS-001', '2004-03-15', 'ACTIVO'),
+  (2, 1, 'Carlos', 'Méndez Ruiz', 'carlos.mendez@example.com', '2026-IS-002', '2003-11-02', 'ACTIVO'),
+  (3, 2, 'Lucía', 'Pérez Soto', 'lucia.perez@example.com', '2026-AE-001', '2005-07-21', 'ACTIVO'),
+  (4, 2, 'José', 'Ramírez Castillo', 'jose.ramirez@example.com', '2026-AE-002', '2004-09-10', 'ACTIVO'),
+  (5, 3, 'Sofía', 'Hernández Morales', 'sofia.hernandez@example.com', '2026-PS-001', '2005-01-30', 'ACTIVO'),
+  (6, 3, 'Diego', 'Juárez Pineda', 'diego.juarez@example.com', '2026-PS-002', NULL, 'ACTIVO');
 
 -- Cada estudiante está inscrito en cursos de su propia carrera.
-INSERT INTO inscripciones (estudiante_id, curso_id) VALUES
-  (1, 1), (1, 2), (1, 3),
-  (2, 2), (2, 4),
-  (3, 5), (3, 6),
-  (4, 5), (4, 7), (4, 8),
-  (5, 9), (5, 10), (5, 11),
-  (6, 9), (6, 12);
+INSERT INTO inscripciones (estudiante_id, curso_id, estado) VALUES
+  (1, 1, 'ACTIVO'), (1, 2, 'ACTIVO'), (1, 3, 'ACTIVO'),
+  (2, 2, 'ACTIVO'), (2, 4, 'ACTIVO'),
+  (3, 5, 'ACTIVO'), (3, 6, 'ACTIVO'),
+  (4, 5, 'ACTIVO'), (4, 7, 'ACTIVO'), (4, 8, 'ACTIVO'),
+  (5, 9, 'ACTIVO'), (5, 10, 'ACTIVO'), (5, 11, 'ACTIVO'),
+  (6, 9, 'ACTIVO'), (6, 12, 'ACTIVO');

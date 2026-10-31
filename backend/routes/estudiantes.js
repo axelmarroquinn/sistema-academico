@@ -5,6 +5,7 @@ const inscripciones = require('../controllers/inscripcionesController');
 const router = express.Router();
 
 router.get('/', controlador.listar);
+router.post('/restaurar', controlador.restaurar);
 router.get('/:id', controlador.obtener);
 router.post('/', controlador.crear);
 router.put('/:id', controlador.actualizar);

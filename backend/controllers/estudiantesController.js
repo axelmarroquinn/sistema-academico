@@ -1,17 +1,17 @@
 const pool = require('../db');
-const { validarId } = require('../validators/comunes');
+const { validarId, obtenerEntrada } = require('../validators/comunes');
 const { validarEstudiante } = require('../validators/estudiantes');
 
-// Datos del estudiante con el nombre de su carrera (sin cursos).
+// Datos del estudiante con el nombre de su carrera y su estado.
 const SELECT_ESTUDIANTES = `
   SELECT e.id, e.nombres, e.apellidos, e.correo, e.carnet, e.fecha_nacimiento,
-         e.carrera_id, ca.nombre AS carrera_nombre
+         e.carrera_id, ca.nombre AS carrera_nombre, e.estado
   FROM estudiantes e
   INNER JOIN carreras ca ON ca.id = e.carrera_id`;
 
-// Cursos inscritos, con el id del estudiante para poder agruparlos en JavaScript.
+// Cursos inscritos ACTIVOS, con el id del estudiante para agruparlos en JavaScript.
 const SELECT_CURSOS_INSCRITOS = `
-  SELECT i.estudiante_id, cu.id, cu.nombre, cu.codigo, cu.creditos
+  SELECT i.estudiante_id, cu.id, cu.nombre, cu.codigo, cu.creditos, i.estado
   FROM inscripciones i
   INNER JOIN cursos cu ON cu.id = i.curso_id`;
 
@@ -20,15 +20,12 @@ function responderErrorBaseDatos(res, error) {
     return res.status(409).json({ error: 'El correo o carnet ya está registrado.' });
   }
   if (error.code === 'ER_NO_REFERENCED_ROW_2') {
-    // Una carrera o un curso se borró entre la validación y la escritura.
     return res.status(400).json({ error: 'La carrera o alguno de los cursos indicados no existe.' });
   }
   console.error('Database error:', error.message);
   return res.status(500).json({ error: 'Error interno del servidor.' });
 }
 
-// Agrega a cada estudiante su arreglo "cursos" a partir de las filas de SELECT_CURSOS_INSCRITOS.
-// Así se usan 2 consultas en total en lugar de 1 por estudiante (problema N+1).
 function agruparCursos(estudiantes, filasCursos) {
   const cursosPorEstudiante = new Map();
   for (const fila of filasCursos) {
@@ -46,34 +43,40 @@ function agruparCursos(estudiantes, filasCursos) {
   }));
 }
 
-// Busca un estudiante con sus cursos; "conexion" puede ser el pool o una conexión de transacción.
-// Devuelve null si no existe.
+// Busca un estudiante ACTIVO con sus cursos ACTIVOS.
 async function buscarEstudiante(conexion, id) {
-  const [estudiantes] = await conexion.execute(`${SELECT_ESTUDIANTES} WHERE e.id = ?`, [id]);
+  const [estudiantes] = await conexion.execute(
+    `${SELECT_ESTUDIANTES} WHERE e.id = ? AND e.estado = 'ACTIVO'`,
+    [id],
+  );
   if (estudiantes.length === 0) return null;
   const [cursos] = await conexion.execute(
-    `${SELECT_CURSOS_INSCRITOS} WHERE i.estudiante_id = ? ORDER BY cu.nombre`,
+    `${SELECT_CURSOS_INSCRITOS} WHERE i.estudiante_id = ? AND i.estado = 'ACTIVO' ORDER BY cu.nombre`,
     [id],
   );
   return agruparCursos(estudiantes, cursos)[0];
 }
 
-// Inserta una fila en inscripciones por cada curso. Se llama dentro de una transacción.
-// cursosIds puede ser null (no se enviaron cursos) o []: en ambos casos no inserta nada.
+// Inserta o reactiva a 'ACTIVO' una fila en inscripciones por cada curso.
 async function insertarInscripciones(conexion, estudianteId, cursosIds) {
   for (const cursoId of cursosIds || []) {
     await conexion.execute(
-      'INSERT INTO inscripciones (estudiante_id, curso_id) VALUES (?, ?)',
+      `INSERT INTO inscripciones (estudiante_id, curso_id, estado) VALUES (?, ?, 'ACTIVO')
+       ON DUPLICATE KEY UPDATE estado = 'ACTIVO'`,
       [estudianteId, cursoId],
     );
   }
 }
 
-const listar = async (_req, res) => {
-  // Ejecuta 2 SELECT (estudiantes y cursos inscritos) y los agrupa; devuelve 200 o 500.
+const listar = async (req, res) => {
   try {
-    const [estudiantes] = await pool.execute(`${SELECT_ESTUDIANTES} ORDER BY e.id`);
-    const [cursos] = await pool.execute(`${SELECT_CURSOS_INSCRITOS} ORDER BY cu.nombre`);
+    // Si se envía ?incluirInactivos=1 devuelve todos; por defecto devuelve los ACTIVOS.
+    const incluirInactivos = req.query && req.query.incluirInactivos === '1';
+    const filtroEstudiante = incluirInactivos ? '' : "WHERE e.estado = 'ACTIVO'";
+    const [estudiantes] = await pool.execute(`${SELECT_ESTUDIANTES} ${filtroEstudiante} ORDER BY e.id`);
+    const [cursos] = await pool.execute(
+      `${SELECT_CURSOS_INSCRITOS} WHERE i.estado = 'ACTIVO' ORDER BY cu.nombre`,
+    );
     return res.status(200).json(agruparCursos(estudiantes, cursos));
   } catch (error) {
     return responderErrorBaseDatos(res, error);
@@ -81,7 +84,6 @@ const listar = async (_req, res) => {
 };
 
 const obtener = async (req, res) => {
-  // Toma id de req.params y devuelve 200, 400, 404 o 500.
   try {
     const id = validarId(req.params.id);
     if (!id) return res.status(400).json({ error: 'El id debe ser un entero positivo.' });
@@ -94,8 +96,6 @@ const obtener = async (req, res) => {
 };
 
 const crear = async (req, res) => {
-  // Toma campos de req.body, valida y, en una transacción, inserta al estudiante y sus
-  // inscripciones (cursos es opcional); devuelve 201, 400, 409 o 500.
   try {
     const { errores, valores } = await validarEstudiante(req.body);
     if (errores.length) return res.status(400).json({ error: 'Hay datos inválidos.', detalles: errores });
@@ -105,18 +105,17 @@ const crear = async (req, res) => {
     try {
       await conexion.beginTransaction();
       const [resultado] = await conexion.execute(
-        'INSERT INTO estudiantes (nombres, apellidos, correo, carnet, carrera_id, fecha_nacimiento) VALUES (?, ?, ?, ?, ?, ?)',
+        "INSERT INTO estudiantes (nombres, apellidos, correo, carnet, carrera_id, fecha_nacimiento, estado) VALUES (?, ?, ?, ?, ?, ?, 'ACTIVO')",
         [valores.nombres, valores.apellidos, valores.correo, valores.carnet, valores.carrera_id, valores.fecha_nacimiento],
       );
       nuevoId = resultado.insertId;
       await insertarInscripciones(conexion, nuevoId, valores.cursos);
       await conexion.commit();
     } catch (error) {
-      // Si algo falla, se deshace todo: no queda un estudiante sin inscripciones ni a medias.
       await conexion.rollback();
       throw error;
     } finally {
-      conexion.release(); // la conexión vuelve al pool siempre
+      conexion.release();
     }
 
     const estudiante = await buscarEstudiante(pool, nuevoId);
@@ -127,35 +126,36 @@ const crear = async (req, res) => {
 };
 
 const actualizar = async (req, res) => {
-  // Toma id de req.params y campos de req.body; en una transacción actualiza al estudiante.
-  // Inscripciones: si el cuerpo trae "cursos" (aunque sea []), se reemplazan; si no lo trae,
-  // no se tocan. Regla de cambio de carrera: si cambia la carrera, no se envía "cursos" y el
-  // estudiante tiene inscripciones, responde 409 (no se borran inscripciones sin pedirlo).
-  // Devuelve 200, 400, 404, 409 o 500.
   try {
     const id = validarId(req.params.id);
     if (!id) return res.status(400).json({ error: 'El id debe ser un entero positivo.' });
-    const [existentes] = await pool.execute('SELECT id FROM estudiantes WHERE id = ?', [id]);
+    const [existentes] = await pool.execute(
+      "SELECT id FROM estudiantes WHERE id = ? AND estado = 'ACTIVO'",
+      [id],
+    );
     if (existentes.length === 0) return res.status(404).json({ error: 'Estudiante no encontrado.' });
-    // Los cursos se validan contra la carrera enviada, que puede ser una carrera nueva.
+
     const { errores, valores } = await validarEstudiante(req.body);
     if (errores.length) return res.status(400).json({ error: 'Hay datos inválidos.', detalles: errores });
 
     const conexion = await pool.getConnection();
     try {
       await conexion.beginTransaction();
-      // FOR UPDATE bloquea la fila del estudiante hasta el commit: nadie puede inscribirlo en
-      // otro curso mientras se decide el cambio de carrera.
-      const [actuales] = await conexion.execute('SELECT carrera_id FROM estudiantes WHERE id = ? FOR UPDATE', [id]);
+      const [actuales] = await conexion.execute(
+        "SELECT carrera_id FROM estudiantes WHERE id = ? AND estado = 'ACTIVO' FOR UPDATE",
+        [id],
+      );
       if (actuales.length === 0) {
-        // Otro usuario lo eliminó después de la comprobación inicial.
         await conexion.rollback();
         return res.status(404).json({ error: 'Estudiante no encontrado.' });
       }
 
       const cambiaCarrera = actuales[0].carrera_id !== valores.carrera_id;
       if (cambiaCarrera && valores.cursos === null) {
-        const [conteo] = await conexion.execute('SELECT COUNT(*) AS total FROM inscripciones WHERE estudiante_id = ?', [id]);
+        const [conteo] = await conexion.execute(
+          "SELECT COUNT(*) AS total FROM inscripciones WHERE estudiante_id = ? AND estado = 'ACTIVO'",
+          [id],
+        );
         if (conteo[0].total > 0) {
           await conexion.rollback();
           return res.status(409).json({
@@ -169,8 +169,11 @@ const actualizar = async (req, res) => {
         [valores.nombres, valores.apellidos, valores.correo, valores.carnet, valores.carrera_id, valores.fecha_nacimiento, id],
       );
       if (valores.cursos !== null) {
-        // Reemplazo de inscripciones: se borran las anteriores y se insertan las enviadas.
-        await conexion.execute('DELETE FROM inscripciones WHERE estudiante_id = ?', [id]);
+        // Borrado lógico de inscripciones: se marcan como INACTIVO las anteriores y se reactivan/insertan las enviadas.
+        await conexion.execute(
+          "UPDATE inscripciones SET estado = 'INACTIVO' WHERE estudiante_id = ?",
+          [id],
+        );
         await insertarInscripciones(conexion, id, valores.cursos);
       }
       await conexion.commit();
@@ -189,17 +192,101 @@ const actualizar = async (req, res) => {
 };
 
 const eliminar = async (req, res) => {
-  // Toma id de req.params y ejecuta DELETE; las inscripciones se borran por ON DELETE CASCADE.
-  // Devuelve 200, 400, 404 o 500.
+  // Borrado lógico: cambia el estado del estudiante y el de sus inscripciones a 'INACTIVO'
+  // conservando el registro histórico en MySQL.
   try {
     const id = validarId(req.params.id);
     if (!id) return res.status(400).json({ error: 'El id debe ser un entero positivo.' });
-    const [resultado] = await pool.execute('DELETE FROM estudiantes WHERE id = ?', [id]);
-    if (resultado.affectedRows === 0) return res.status(404).json({ error: 'Estudiante no encontrado.' });
-    return res.status(200).json({ mensaje: 'Estudiante eliminado correctamente.' });
+
+    const conexion = await pool.getConnection();
+    try {
+      await conexion.beginTransaction();
+      const [resultado] = await conexion.execute(
+        "UPDATE estudiantes SET estado = 'INACTIVO' WHERE id = ? AND estado = 'ACTIVO'",
+        [id],
+      );
+      if (resultado.affectedRows === 0) {
+        await conexion.rollback();
+        return res.status(404).json({ error: 'Estudiante no encontrado.' });
+      }
+      await conexion.execute(
+        "UPDATE inscripciones SET estado = 'INACTIVO' WHERE estudiante_id = ?",
+        [id],
+      );
+      await conexion.commit();
+      return res.status(200).json({ mensaje: 'Estudiante marcado como INACTIVO correctamente.' });
+    } catch (error) {
+      await conexion.rollback();
+      throw error;
+    } finally {
+      conexion.release();
+    }
   } catch (error) {
     return responderErrorBaseDatos(res, error);
   }
 };
 
-module.exports = { listar, obtener, crear, actualizar, eliminar };
+const restaurar = async (req, res) => {
+  // POST /api/estudiantes/restaurar con { "identificador": "2" } o { "identificador": "2026-IS-002" }
+  // Reactiva al estudiante INACTIVO y restaura sus inscripciones que correspondan a su carrera.
+  try {
+    const entrada = obtenerEntrada(req.body);
+    const raw = entrada.identificador !== undefined ? entrada.identificador : entrada.id;
+    const identificador = String(raw || '').trim();
+    if (!identificador) {
+      return res.status(400).json({ error: 'Debe indicar el ID o el Carnet del estudiante a restaurar.' });
+    }
+
+    const conexion = await pool.getConnection();
+    let estudianteId;
+    try {
+      await conexion.beginTransaction();
+      const esNumero = /^\d+$/.test(identificador);
+      const [filas] = await conexion.execute(
+        esNumero
+          ? 'SELECT id, carrera_id, estado FROM estudiantes WHERE id = ? OR carnet = ? FOR UPDATE'
+          : 'SELECT id, carrera_id, estado FROM estudiantes WHERE carnet = ? FOR UPDATE',
+        esNumero ? [Number(identificador), identificador] : [identificador],
+      );
+
+      if (filas.length === 0) {
+        await conexion.rollback();
+        return res.status(404).json({ error: 'No existe ningún estudiante registrado con ese ID o Carnet.' });
+      }
+
+      if (filas[0].estado === 'ACTIVO') {
+        await conexion.rollback();
+        return res.status(409).json({ error: 'El estudiante ya se encuentra ACTIVO.' });
+      }
+
+      estudianteId = filas[0].id;
+      await conexion.execute(
+        "UPDATE estudiantes SET estado = 'ACTIVO' WHERE id = ?",
+        [estudianteId],
+      );
+
+      // Restaurar las inscripciones del estudiante que pertenezcan a su carrera actual
+      await conexion.execute(
+        `UPDATE inscripciones i
+         INNER JOIN cursos cu ON cu.id = i.curso_id
+         SET i.estado = 'ACTIVO'
+         WHERE i.estudiante_id = ? AND cu.carrera_id = ?`,
+        [estudianteId, filas[0].carrera_id],
+      );
+
+      await conexion.commit();
+    } catch (error) {
+      await conexion.rollback();
+      throw error;
+    } finally {
+      conexion.release();
+    }
+
+    const estudiante = await buscarEstudiante(pool, estudianteId);
+    return res.status(200).json(estudiante);
+  } catch (error) {
+    return responderErrorBaseDatos(res, error);
+  }
+};
+
+module.exports = { listar, obtener, crear, actualizar, eliminar, restaurar };
