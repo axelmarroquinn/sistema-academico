@@ -914,7 +914,7 @@ body.dark-mode span:not(.theme-slider),
 body.dark-mode th,
 body.dark-mode td,
 body.dark-mode li {
-    color: #f8fafc !important;
+    color: #bff1fa !important;
 }
 
 body.dark-mode p,
@@ -1000,4 +1000,138 @@ body.dark-mode .sidebar-section h3 {
 body.dark-mode .theme-switch-wrapper {
     background-color: #1e293b !important;
     color: #f8fafc !important;
+}
+/* ==========================================================
+   Barra "Restaurar estudiante" — pegar al final de styles.css
+   Colores propios del componente, con variante oscura legible.
+   ========================================================== */
+
+.restaurar {
+  --rest-fondo: #ffffff;
+  --rest-borde: #e2e8f0;
+  --rest-titulo: #0f172a;
+  --rest-ayuda: #475569;
+  --rest-input-fondo: #ffffff;
+  --rest-input-texto: #0f172a;
+  --rest-input-borde: #cbd5e1;
+  --rest-boton: #15803d;
+  --rest-boton-hover: #166534;
+  --rest-foco: #2563eb;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: var(--rest-fondo);
+  border: 1px solid var(--rest-borde);
+  color: var(--rest-titulo);
+}
+
+/* Modo oscuro: cubre las formas más comunes de activarlo.
+   Deja solo la que use tu main.js (ver nota al final). */
+body.dark-mode .restaurar,
+body.modo-oscuro .restaurar,
+body.dark .restaurar,
+html.dark-mode .restaurar,
+html.dark .restaurar,
+[data-theme="dark"] .restaurar {
+  --rest-fondo: #111c33;
+  --rest-borde: #26365a;
+  --rest-titulo: #e2e8f0;
+  --rest-ayuda: #a8b5cc;
+  --rest-input-fondo: #0b1220;
+  --rest-input-texto: #f1f5f9;
+  --rest-input-borde: #3a4d78;
+  --rest-boton: #16a34a;
+  --rest-boton-hover: #22c55e;
+  --rest-foco: #7dd3fc;
+}
+
+.restaurar__texto {
+  flex: 1 1 280px;
+}
+
+.restaurar__titulo {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--rest-titulo);
+}
+
+.restaurar__ayuda {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--rest-ayuda);
+}
+
+.restaurar__form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.restaurar__input {
+  width: 240px;
+  max-width: 100%;
+  padding: 0.45rem 0.75rem;
+  font: inherit;
+  color: var(--rest-input-texto);
+  background: var(--rest-input-fondo);
+  border: 1px solid var(--rest-input-borde);
+  border-radius: 6px;
+}
+
+.restaurar__input::placeholder {
+  color: var(--rest-ayuda);
+  opacity: 1;
+}
+
+.restaurar__boton {
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--rest-boton);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.restaurar__boton:hover {
+  background: var(--rest-boton-hover);
+}
+
+.restaurar__input:focus-visible,
+.restaurar__boton:focus-visible {
+  outline: 2px solid var(--rest-foco);
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .restaurar__form {
+    width: 100%;
+  }
+
+  .restaurar__input {
+    flex: 1;
+    width: auto;
+  }
+}
+
+/* Texto solo para lectores de pantalla (si no lo tienes ya) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
