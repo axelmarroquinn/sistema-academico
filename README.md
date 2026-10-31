@@ -26,10 +26,11 @@ Centraliza el registro de carreras, cursos y estudiantes con sus inscripciones, 
 ## Arquitectura
 
 **Usuario → Frontend → Fetch/HTTP → API REST → MySQL**
+## Modelo de datos y Borrado Lógico
+Cada estudiante pertenece a **una** carrera y puede inscribirse en **varios** cursos de esa misma carrera. La relación muchos a muchos se gestiona a través de la tabla intermedia `inscripciones`. 
 
-## Modelo de datos
-
-Cada estudiante pertenece a **una** carrera y puede inscribirse en **varios** cursos de esa misma carrera. La relación muchos a muchos entre estudiantes y cursos se guarda en la tabla intermedia `inscripciones`.
+Ambas tablas principales (**`estudiantes`** e **`inscripciones`**) integran un campo **`estado` (`ENUM('ACTIVO', 'INACTIVO')`)** para aplicar **borrado lógico** en lugar de borrado físico en cascada:
+* Al dar de baja a un estudiante o quitarle un curso, su estado cambia a `INACTIVO`, permitiendo conservar registros históricos y aplicar la restauración por ID o Carnet de forma transparente.
 
 ```mermaid
 erDiagram
@@ -58,13 +59,16 @@ erDiagram
         varchar correo UK
         varchar carnet UK
         date fecha_nacimiento "opcional"
+        enum estado "ACTIVO o INACTIVO"
         timestamp creado_en
         timestamp actualizado_en
     }
     INSCRIPCIONES {
         int estudiante_id PK, FK
         int curso_id PK, FK
+        enum estado "ACTIVO o INACTIVO"
         timestamp creado_en
+        timestamp actualizado_en
     }
 ```
 
@@ -137,7 +141,7 @@ Requisitos: Node.js 20 o posterior y MySQL 8 o MariaDB instalado y en ejecución
 
    Ingrese la contraseña cuando MySQL la solicite. Reemplace `root` si usa otro usuario. La opción `--default-character-set=utf8mb4` evita que los acentos se guarden corruptos.
 
-   > **Advertencia:** `database.sql` borra las tablas `inscripciones`, `estudiantes`, `cursos` y `carreras` con todos sus datos y las vuelve a crear con los datos iniciales. Úselo solo para instalar o reiniciar la base.
+   > **Advertencia:** `database.sql` borra las tablas `cursos` y `carreras` con todos sus datos y las vuelve a crear con los datos iniciales. Úselo solo para instalar o reiniciar la base.
 
 4. Inicie el backend:
 
